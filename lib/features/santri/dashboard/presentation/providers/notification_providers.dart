@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:sisantri/shared/services/auth_service.dart';
 import 'package:sisantri/shared/services/firestore_service.dart';
+import 'package:sisantri/shared/models/jadwal_kegiatan_model.dart';
 
 /// Provider untuk notifikasi real-time
 final notificationsProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
@@ -36,8 +38,22 @@ final notificationsProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
       }
 
       // Notifikasi kegiatan hari ini
-      final upcomingKegiatan =
-          await FirestoreService.getUpcomingKegiatan().first;
+      final upcomingKegiatan = await FirebaseFirestore.instance
+          .collection('jadwal')
+          .where('tanggalMulai', isGreaterThanOrEqualTo: Timestamp.now())
+          .orderBy('tanggalMulai')
+          .limit(5)
+          .get()
+          .then(
+            (snapshot) => snapshot.docs
+                .map(
+                  (doc) => JadwalKegiatanModel.fromJson({
+                    'id': doc.id,
+                    ...doc.data(),
+                  }),
+                )
+                .toList(),
+          );
       for (final kegiatan in upcomingKegiatan) {
         if (kegiatan.isToday) {
           notifications.add({

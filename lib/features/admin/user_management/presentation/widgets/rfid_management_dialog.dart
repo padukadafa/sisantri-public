@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sisantri/shared/models/user_model.dart';
-import 'package:sisantri/shared/services/nfc_service.dart';
+import 'package:sisantri/shared/widgets/rfid_scan_dialog.dart';
 
 /// Dialog untuk mengelola RFID card user
 class RfidManagementDialog extends StatefulWidget {
@@ -14,35 +14,21 @@ class RfidManagementDialog extends StatefulWidget {
 }
 
 class RfidManagementDialogState extends State<RfidManagementDialog> {
-  final _nfcService = NfcService();
   final _cardIdController = TextEditingController();
 
-  bool _isScanning = false;
   bool _isLoading = false;
-  bool _nfcAvailable = false;
   String? _scannedCardId;
 
   @override
   void initState() {
     super.initState();
     _cardIdController.text = widget.user.rfidCardId ?? '';
-    _checkNfcAvailability();
   }
 
   @override
   void dispose() {
     _cardIdController.dispose();
-    _nfcService.stopSession();
     super.dispose();
-  }
-
-  Future<void> _checkNfcAvailability() async {
-    final isAvailable = await _nfcService.isNfcAvailable();
-    if (mounted) {
-      setState(() {
-        _nfcAvailable = isAvailable;
-      });
-    }
   }
 
   @override
@@ -94,7 +80,7 @@ class RfidManagementDialogState extends State<RfidManagementDialog> {
                           ),
                           Text(
                             widget.user.hasRfidSetup
-                                ? 'Kartu: ${_nfcService.formatCardId(widget.user.rfidCardId!)}'
+                                ? 'Kartu: ${widget.user.rfidCardId}'
                                 : 'Belum ada kartu yang di-assign',
                             style: const TextStyle(fontSize: 12),
                           ),
@@ -106,28 +92,27 @@ class RfidManagementDialogState extends State<RfidManagementDialog> {
               ),
               const SizedBox(height: 16),
 
-              // NFC Availability Warning
-              if (!_nfcAvailable)
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.red.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.red.withOpacity(0.3)),
-                  ),
-                  child: const Row(
-                    children: [
-                      Icon(Icons.warning, color: Colors.red),
-                      SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'NFC tidak tersedia pada perangkat ini. Anda dapat memasukkan ID kartu secara manual.',
-                          style: TextStyle(fontSize: 12),
-                        ),
-                      ),
-                    ],
-                  ),
+              // Info Scanner Eksternal
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.blue.withOpacity(0.3)),
                 ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline, color: Colors.blue),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Gunakan scanner RFID eksternal untuk scan kartu, atau masukkan ID kartu secara manual.',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 16),
 
               // Manual Input
@@ -156,29 +141,20 @@ class RfidManagementDialogState extends State<RfidManagementDialog> {
               ),
               const SizedBox(height: 16),
 
-              // NFC Scan Button
-              if (_nfcAvailable)
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    onPressed: _isScanning || _isLoading ? null : _startNfcScan,
-                    icon: _isScanning
-                        ? const SizedBox(
-                            width: 16,
-                            height: 16,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.nfc),
-                    label: Text(
-                      _isScanning ? 'Scanning...' : 'Scan Kartu RFID',
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.all(12),
-                    ),
+              // RFID Scanner Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _isLoading ? null : _startRfidScan,
+                  icon: const Icon(Icons.contactless),
+                  label: const Text('Scan Kartu RFID'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.all(12),
                   ),
                 ),
+              ),
 
               if (_scannedCardId != null) ...[
                 const SizedBox(height: 8),
@@ -198,7 +174,7 @@ class RfidManagementDialogState extends State<RfidManagementDialog> {
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Kartu berhasil discan: ${_nfcService.formatCardId(_scannedCardId!)}',
+                          'Kartu berhasil discan: $_scannedCardId',
                           style: const TextStyle(
                             fontSize: 12,
                             color: Colors.green,
@@ -248,51 +224,20 @@ class RfidManagementDialogState extends State<RfidManagementDialog> {
     );
   }
 
-  Future<void> _startNfcScan() async {
-    setState(() {
-      _isScanning = true;
-    });
-
-    try {
-      await _nfcService.startSession(
-        alertMessage:
-            'Tempelkan kartu RFID pada perangkat untuk membaca ID kartu',
-        onCardDetected: (cardId) {
-          if (mounted) {
-            setState(() {
-              _cardIdController.text = cardId;
-              _scannedCardId = cardId;
-              _isScanning = false;
-            });
-          }
-        },
-        onError: (error) {
-          if (mounted) {
-            setState(() {
-              _isScanning = false;
-            });
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Error: $error'),
-                backgroundColor: Colors.red,
-              ),
-            );
-          }
-        },
-      );
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isScanning = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error memulai scan NFC: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
+  Future<void> _startRfidScan() async {
+    await showRfidScanDialog(
+      context: context,
+      userId: widget.user.id,
+      userName: widget.user.nama,
+      onSuccess: (rfidCardId) {
+        if (mounted) {
+          setState(() {
+            _cardIdController.text = rfidCardId;
+            _scannedCardId = rfidCardId;
+          });
+        }
+      },
+    );
   }
 
   Future<void> _saveRfidCard() async {
@@ -308,10 +253,11 @@ class RfidManagementDialogState extends State<RfidManagementDialog> {
       return;
     }
 
-    if (!_nfcService.isValidCardId(cardId)) {
+    // Validasi panjang minimal ID kartu
+    if (cardId.length < 4) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Format ID kartu tidak valid'),
+          content: Text('ID kartu terlalu pendek (minimal 4 karakter)'),
           backgroundColor: Colors.red,
         ),
       );
@@ -360,7 +306,7 @@ class RfidManagementDialogState extends State<RfidManagementDialog> {
         'type': 'rfid_assigned',
         'title': 'RFID Card Assigned',
         'description':
-            'Kartu RFID ${_nfcService.formatCardId(cardId)} berhasil di-assign ke ${widget.user.nama}',
+            'Kartu RFID $cardId berhasil di-assign ke ${widget.user.nama}',
         'timestamp': FieldValue.serverTimestamp(),
         'recordedBy': 'Admin',
       });

@@ -8,6 +8,7 @@ import 'package:sisantri/shared/models/presensi_model.dart';
 import 'package:sisantri/shared/models/user_model.dart';
 import 'package:sisantri/features/admin/user_management/presentation/pages/user_management_page.dart';
 import 'package:sisantri/features/admin/attendance_management/presentation/pages/attendance_report_page.dart';
+import 'package:sisantri/features/admin/statistics/presentation/pages/admin_statistics_page.dart';
 import 'package:sisantri/shared/services/presensi_service.dart';
 
 enum PeriodFilter {

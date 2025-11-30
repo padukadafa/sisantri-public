@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sisantri/shared/helpers/messaging_helper.dart';
+import 'package:sisantri/shared/models/jadwal_kegiatan_model.dart';
+import 'package:sisantri/shared/models/presensi_aggregate_model.dart';
 import 'package:sisantri/shared/services/attendance_service.dart';
 import '../models/jadwal_kegiatan_model.dart';
 
@@ -11,7 +13,7 @@ class ScheduleService {
     : _firestore = firestore ?? FirebaseFirestore.instance;
 
   /// Tambah jadwal baru dengan attendance generation
-  Future<String> addJadwalWithAttendance(JadwalKegiatan jadwal) async {
+  Future<String> addJadwalWithAttendance(JadwalModel jadwal) async {
     try {
       final docRef = await _firestore.collection('jadwal').add(jadwal.toJson());
 
@@ -19,6 +21,7 @@ class ScheduleService {
         jadwalId: docRef.id,
         createdBy: 'admin',
         createdByName: 'Admin',
+        jadwal: jadwal,
       );
 
       // Step 3: Send notification about new schedule
@@ -74,9 +77,90 @@ class ScheduleService {
     }
   }
 
-  /// Hapus jadwal (soft delete)
+  /// Hapus jadwal (soft delete) dan update aggregates
   Future<void> deleteJadwal(String id) async {
     try {
+      // Get jadwal data untuk tanggal dan presensi yang terkait
+      final jadwalDoc = await _firestore.collection('jadwal').doc(id).get();
+
+      if (jadwalDoc.exists) {
+        final jadwalData = jadwalDoc.data();
+        final tanggalJadwal = (jadwalData?['tanggal'] as Timestamp?)?.toDate();
+
+        // Get semua presensi untuk jadwal ini
+        final presensiSnapshot = await _firestore
+            .collection('presensi')
+            .where('jadwalId', isEqualTo: id)
+            .get();
+
+        // Decrement aggregate untuk setiap presensi (hapus dari counter)
+        for (final presensiDoc in presensiSnapshot.docs) {
+          final presensiData = presensiDoc.data();
+          final userId = presensiData['userId'] as String?;
+          final status = presensiData['status'] as String?;
+          final poinDiperoleh = presensiData['poinDiperoleh'] as int? ?? 0;
+
+          if (userId != null && status != null && tanggalJadwal != null) {
+            // Decrement aggregate dengan cara set status baru = null
+            // dan oldStatus = status yang ingin dikurangi
+            final batch = _firestore.batch();
+            final periodes = [
+              'daily',
+              'weekly',
+              'monthly',
+              'semester',
+              'yearly',
+            ];
+
+            for (final periode in periodes) {
+              final periodeKey = _getPeriodeKey(periode, tanggalJadwal);
+              final docId = '${userId}_${periode}_$periodeKey';
+              final docRef = _firestore
+                  .collection('presensi_aggregates')
+                  .doc(docId);
+
+              // Decrement counter status dan poin
+              final updateData = <String, dynamic>{
+                'lastUpdated': Timestamp.now(),
+              };
+
+              // Decrement status counter
+              switch (status) {
+                case 'hadir':
+                  updateData['totalHadir'] = FieldValue.increment(-1);
+                  break;
+                case 'izin':
+                  updateData['totalIzin'] = FieldValue.increment(-1);
+                  break;
+                case 'sakit':
+                  updateData['totalSakit'] = FieldValue.increment(-1);
+                  break;
+                case 'alpha':
+                  updateData['totalAlpha'] = FieldValue.increment(-1);
+                  break;
+              }
+
+              // Decrement poin
+              if (poinDiperoleh > 0) {
+                updateData['totalPoin'] = FieldValue.increment(-poinDiperoleh);
+              }
+
+              batch.update(docRef, updateData);
+            }
+
+            await batch.commit();
+          }
+        }
+
+        // Hapus semua presensi terkait jadwal ini
+        final batch = _firestore.batch();
+        for (final doc in presensiSnapshot.docs) {
+          batch.delete(doc.reference);
+        }
+        await batch.commit();
+      }
+
+      // Soft delete jadwal
       await _firestore.collection('jadwal').doc(id).update({
         'isAktif': false,
         'deletedAt': DateTime.now().millisecondsSinceEpoch,
@@ -86,6 +170,24 @@ class ScheduleService {
     } catch (e) {
       _showError('Gagal menghapus jadwal: $e');
       rethrow;
+    }
+  }
+
+  // Helper method untuk generate periode key
+  String _getPeriodeKey(String periode, DateTime date) {
+    switch (periode) {
+      case 'daily':
+        return PeriodeKeyHelper.daily(date);
+      case 'weekly':
+        return PeriodeKeyHelper.weekly(date);
+      case 'monthly':
+        return PeriodeKeyHelper.monthly(date);
+      case 'semester':
+        return PeriodeKeyHelper.semester(date);
+      case 'yearly':
+        return PeriodeKeyHelper.yearly(date);
+      default:
+        return PeriodeKeyHelper.daily(date);
     }
   }
 

@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:sisantri/core/theme/app_theme.dart';
 import 'package:sisantri/shared/models/jadwal_model.dart';
+import 'package:sisantri/features/shared/jadwal/presentation/jadwal_detail_page.dart';
 
 /// Provider untuk jadwal dari Firestore
 final jadwalProvider = StreamProvider<List<JadwalModel>>((ref) {
@@ -202,7 +203,7 @@ class JadwalPage extends ConsumerWidget {
                     itemCount: jadwalList.length,
                     itemBuilder: (context, index) {
                       final jadwal = jadwalList[index];
-                      return _buildJadwalCard(jadwal);
+                      return _buildJadwalCard(context, jadwal);
                     },
                   ),
                 );
@@ -241,7 +242,7 @@ class JadwalPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildJadwalCard(JadwalModel jadwal) {
+  Widget _buildJadwalCard(BuildContext context, JadwalModel jadwal) {
     final color = _getKategoriColor(jadwal.kategori);
 
     return Card(
@@ -249,7 +250,7 @@ class JadwalPage extends ConsumerWidget {
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: InkWell(
-        onTap: () => _showJadwalDetail(jadwal),
+        onTap: () => _showJadwalDetail(context, jadwal),
         borderRadius: BorderRadius.circular(12),
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -400,8 +401,13 @@ class JadwalPage extends ConsumerWidget {
     );
   }
 
-  void _showJadwalDetail(JadwalModel jadwal) {
-    // TODO: Implement detail dialog
+  void _showJadwalDetail(BuildContext context, JadwalModel jadwal) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => JadwalDetailPage(jadwalId: jadwal.id),
+      ),
+    );
   }
 
   String _getKategoriLabel(TipeJadwal kategori) {

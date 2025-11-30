@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:sisantri/shared/models/user_model.dart';
 import 'package:sisantri/shared/models/presensi_model.dart';
 import 'package:sisantri/shared/services/firestore_service.dart';
+import 'package:sisantri/shared/services/presensi_aggregate_service.dart';
 
 class DashboardStatsCards extends StatelessWidget {
   final UserModel? user;
@@ -60,7 +61,11 @@ class DashboardStatsCards extends StatelessWidget {
         Expanded(
           child: FutureBuilder<int>(
             future: user != null
-                ? FirestoreService.calculateUserPoints(user!.id)
+                ? PresensiAggregateService.getAggregate(
+                    userId: user!.id,
+                    periode: 'yearly',
+                    date: DateTime.now(),
+                  ).then((agg) => agg?.totalPoin ?? 0)
                 : Future.value(0),
             builder: (context, snapshot) {
               final poin = snapshot.data ?? 0;

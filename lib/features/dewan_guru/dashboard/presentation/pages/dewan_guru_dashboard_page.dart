@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:sisantri/core/theme/app_theme.dart';
+import 'package:sisantri/features/santri/leaderboard/presentation/aggregate_leaderboard_page.dart';
 import 'package:sisantri/shared/models/user_model.dart';
 import 'package:sisantri/shared/models/jadwal_model.dart';
 import 'package:sisantri/features/santri/presensi/presentation/pages/presensi_summary_page.dart';
@@ -236,7 +237,9 @@ class DewanGuruDashboardPage extends ConsumerWidget {
         'color': Colors.amber,
         'onTap': () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const LeaderboardPage()),
+          MaterialPageRoute(
+            builder: (context) => const AggregateLeaderboardPage(),
+          ),
         ),
       },
       {

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sisantri/features/shared/announcement/data/models/announcement_model.dart';
 import 'package:sisantri/shared/services/auth_service.dart';
 import 'package:sisantri/shared/services/firestore_service.dart';
@@ -27,7 +28,21 @@ final todayPresensiProvider = FutureProvider<PresensiModel?>((ref) async {
 final upcomingKegiatanProvider = StreamProvider<List<JadwalKegiatanModel>>((
   ref,
 ) {
-  return FirestoreService.getUpcomingKegiatan();
+  // Query jadwal upcoming langsung dari Firestore
+  return FirebaseFirestore.instance
+      .collection('jadwal')
+      .where('tanggalMulai', isGreaterThanOrEqualTo: Timestamp.now())
+      .orderBy('tanggalMulai')
+      .limit(5)
+      .snapshots()
+      .map(
+        (snapshot) => snapshot.docs
+            .map(
+              (doc) =>
+                  JadwalKegiatanModel.fromJson({'id': doc.id, ...doc.data()}),
+            )
+            .toList(),
+      );
 });
 
 final recentPengumumanProvider = StreamProvider<List<AnnouncementModel>>((ref) {

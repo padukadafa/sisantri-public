@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sisantri/features/santri/leaderboard/presentation/aggregate_leaderboard_page.dart';
 import 'package:sisantri/features/santri/presensi/presentation/pages/presensi_page.dart';
 import 'package:sisantri/core/theme/app_theme.dart';
 import 'package:sisantri/features/santri/dashboard/presentation/pages/santri_dashboard_page.dart';
@@ -22,7 +23,7 @@ class MainNavigation extends ConsumerWidget {
       const SantriDashboardPage(),
       const JadwalPage(),
       const PresensiPage(),
-      const LeaderboardPage(),
+      const AggregateLeaderboardPage(),
       const ProfilePage(),
     ];
 

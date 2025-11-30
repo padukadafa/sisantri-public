@@ -48,10 +48,19 @@ class MateriSelector extends ConsumerWidget {
         ),
       ),
       data: (materiList) {
-        // Filter hanya materi aktif
+        // Filter hanya materi aktif dan deduplikasi berdasarkan ID
         final activeMateri = materiList.where((m) => m.isAktif).toList();
 
-        if (activeMateri.isEmpty) {
+        // Deduplikasi: ambil hanya materi dengan ID unik
+        final uniqueMateri = <String, dynamic>{};
+        for (final materi in activeMateri) {
+          if (!uniqueMateri.containsKey(materi.id)) {
+            uniqueMateri[materi.id] = materi;
+          }
+        }
+        final uniqueActiveMateri = uniqueMateri.values.toList();
+
+        if (uniqueActiveMateri.isEmpty) {
           return Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -80,8 +89,15 @@ class MateriSelector extends ConsumerWidget {
           );
         }
 
+        // Validasi: cek apakah selectedMateriId ada dalam list
+        final validatedValue =
+            selectedMateriId != null &&
+                uniqueActiveMateri.any((m) => m.id == selectedMateriId)
+            ? selectedMateriId
+            : null;
+
         return DropdownButtonFormField<String>(
-          value: selectedMateriId,
+          value: validatedValue,
           decoration: InputDecoration(
             labelText: 'Pilih Materi Kajian',
             hintText: 'Pilih materi dari daftar',
@@ -106,7 +122,7 @@ class MateriSelector extends ConsumerWidget {
               ),
             ),
             // Daftar materi
-            ...activeMateri.map((materi) {
+            ...uniqueActiveMateri.map((materi) {
               return DropdownMenuItem<String>(
                 value: materi.id,
                 child: Row(
@@ -118,11 +134,14 @@ class MateriSelector extends ConsumerWidget {
                       color: _getJenisColor(materi.jenis),
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      materi.nama,
-                      style: const TextStyle(fontWeight: FontWeight.w500),
-                      overflow: TextOverflow.ellipsis,
+                    Expanded(
+                      child: Text(
+                        materi.nama,
+                        style: const TextStyle(fontWeight: FontWeight.w500),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
+                    const SizedBox(width: 4),
                     // Badge jenis materi
                     Container(
                       padding: const EdgeInsets.symmetric(
@@ -151,7 +170,7 @@ class MateriSelector extends ConsumerWidget {
             if (materiId == null) {
               onMateriChanged(null, null, null);
             } else {
-              final selectedMateri = activeMateri.firstWhere(
+              final selectedMateri = uniqueActiveMateri.firstWhere(
                 (m) => m.id == materiId,
               );
               onMateriChanged(

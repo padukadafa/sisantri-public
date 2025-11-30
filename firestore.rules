@@ -1,0 +1,148 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function untuk check authentication
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function untuk check role
+    function hasRole(role) {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+    
+    // Helper function untuk check if user is owner
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Users collection
+    match /users/{userId} {
+      // Read: authenticated users dapat read semua profiles
+      allow read: if isAuthenticated();
+      
+      // Create: only during registration (handled by backend)
+      allow create: if isAuthenticated();
+      
+      // Update: user dapat update profile sendiri, atau admin dapat update semua
+      allow update: if isOwner(userId) || hasRole('admin');
+      
+      // Delete: only admin
+      allow delete: if hasRole('admin');
+    }
+    
+    // Presensi collection
+    match /presensi/{presensiId} {
+      // Read: authenticated users dapat read semua presensi
+      allow read: if isAuthenticated();
+      
+      // Create: only admin atau dewan_guru
+      allow create: if hasRole('admin') || hasRole('dewan_guru');
+      
+      // Update: only admin atau dewan_guru
+      allow update: if hasRole('admin') || hasRole('dewan_guru');
+      
+      // Delete: only admin
+      allow delete: if hasRole('admin');
+    }
+    
+    // Presensi Aggregates collection (NEW)
+    match /presensi_aggregates/{aggregateId} {
+      // Read: semua authenticated users dapat read aggregates
+      allow read: if isAuthenticated();
+      
+      // Write: only admin (aggregates di-update otomatis oleh system)
+      allow write: if hasRole('admin');
+    }
+    
+    // Jadwal collection
+    match /jadwal/{jadwalId} {
+      // Read: authenticated users dapat read semua jadwal
+      allow read: if isAuthenticated();
+      
+      // Create/Update: only admin atau dewan_guru
+      allow create, update: if hasRole('admin') || hasRole('dewan_guru');
+      
+      // Delete: only admin
+      allow delete: if hasRole('admin');
+    }
+    
+    // Materi collection
+    match /materi/{materiId} {
+      // Read: authenticated users dapat read semua materi
+      allow read: if isAuthenticated();
+      
+      // Write: only admin atau dewan_guru
+      allow write: if hasRole('admin') || hasRole('dewan_guru');
+    }
+    
+    // Capaian Materi collection
+    match /capaian_materi/{capaianId} {
+      // Read: authenticated users dapat read
+      allow read: if isAuthenticated();
+      
+      // Write: only admin atau dewan_guru
+      allow write: if hasRole('admin') || hasRole('dewan_guru');
+    }
+    
+    // Pengumuman collection
+    match /pengumuman/{pengumumanId} {
+      // Read: authenticated users dapat read semua pengumuman
+      allow read: if isAuthenticated();
+      
+      // Write: only admin
+      allow write: if hasRole('admin');
+    }
+    
+    // RFID Scan Requests collection (NEW)
+    match /rfid_scan_requests/{requestId} {
+      // Read: authenticated users dapat read
+      allow read: if isAuthenticated();
+      
+      // Create: only admin atau dewan_guru (untuk initiate scan)
+      allow create: if hasRole('admin') || hasRole('dewan_guru');
+      
+      // Update: admin, dewan_guru, atau external scanner device
+      // External device authenticated via service account
+      allow update: if hasRole('admin') || hasRole('dewan_guru');
+      
+      // Delete: only admin (untuk cleanup old requests)
+      allow delete: if hasRole('admin');
+    }
+    
+    // Notifications collection (optional - jika ada)
+    match /notifications/{notificationId} {
+      // Read: user hanya dapat read notifikasi sendiri
+      allow read: if isAuthenticated() && 
+                     resource.data.userId == request.auth.uid;
+      
+      // Create: system atau admin
+      allow create: if hasRole('admin');
+      
+      // Update: user dapat mark as read
+      allow update: if isAuthenticated() && 
+                       resource.data.userId == request.auth.uid;
+      
+      // Delete: user dapat delete notifikasi sendiri
+      allow delete: if isAuthenticated() && 
+                       resource.data.userId == request.auth.uid;
+    }
+    
+    // Settings collection (optional - jika ada)
+    match /settings/{settingId} {
+      // Read: all authenticated users
+      allow read: if isAuthenticated();
+      
+      // Write: only admin
+      allow write: if hasRole('admin');
+    }
+    
+    // Default: deny all other access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

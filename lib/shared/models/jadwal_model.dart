@@ -34,6 +34,10 @@ class JadwalModel {
   final int? halamanMulai; // Untuk materi jenis hadist/lainnya
   final int? halamanSelesai; // Untuk materi jenis hadist/lainnya
   final int poin; // Poin yang didapatkan jika hadir
+  final int presensiHadir;
+  final int presensiIzin;
+  final int presensiSakit;
+  final int presensiAlpha;
 
   final bool isAktif;
   final DateTime? createdAt;
@@ -59,6 +63,10 @@ class JadwalModel {
     this.isAktif = true,
     this.createdAt,
     this.updatedAt,
+    this.presensiHadir = 0,
+    this.presensiIzin = 0,
+    this.presensiSakit = 0,
+    this.presensiAlpha = 0,
   });
 
   /// Factory constructor untuk membuat JadwalModel dari JSON
@@ -99,6 +107,10 @@ class JadwalModel {
                     json['updatedAt'].millisecondsSinceEpoch,
                   ))
           : null,
+      presensiHadir: json['presensiHadir'] as int? ?? 0,
+      presensiIzin: json['presensiIzin'] as int? ?? 0,
+      presensiSakit: json['presensiSakit'] as int? ?? 0,
+      presensiAlpha: json['presensiAlpha'] as int? ?? 0,
     );
   }
 
@@ -123,6 +135,39 @@ class JadwalModel {
       'isAktif': isAktif,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
+      'presensiHadir': presensiHadir,
+      'presensiIzin': presensiIzin,
+      'presensiSakit': presensiSakit,
+      'presensiAlpha': presensiAlpha,
+    };
+  }
+
+  /// Method untuk convert ke format Firebase dengan attendance data
+  Map<String, dynamic> toNewFirebaseData() {
+    return {
+      'nama': nama,
+      'tanggal': tanggal,
+      'waktuMulai': waktuMulai,
+      'waktuSelesai': waktuSelesai,
+      'kategori': kategori.value,
+      'tempat': tempat,
+      'deskripsi': deskripsi,
+      'pemateriId': pemateriId,
+      'pemateriNama': pemateriNama,
+      'materiId': materiId,
+      'ayatMulai': ayatMulai,
+      'ayatSelesai': ayatSelesai,
+      'halamanMulai': halamanMulai,
+      'halamanSelesai': halamanSelesai,
+      'poin': poin,
+      'isAktif': isAktif,
+      'createdAt': createdAt,
+      'updatedAt': updatedAt,
+      'presensiHadir': presensiHadir,
+      'presensiIzin': presensiIzin,
+      'presensiSakit': presensiSakit,
+      'presensiAlpha': presensiAlpha,
+      'totalPresensi': totalPresensi,
     };
   }
 
@@ -152,6 +197,10 @@ class JadwalModel {
     bool? isAktif,
     DateTime? createdAt,
     DateTime? updatedAt,
+    int? presensiHadir,
+    int? presensiIzin,
+    int? presensiSakit,
+    int? presensiAlpha,
   }) {
     return JadwalModel(
       id: id ?? this.id,
@@ -173,6 +222,10 @@ class JadwalModel {
       isAktif: isAktif ?? this.isAktif,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      presensiHadir: presensiHadir ?? this.presensiHadir,
+      presensiIzin: presensiIzin ?? this.presensiIzin,
+      presensiSakit: presensiSakit ?? this.presensiSakit,
+      presensiAlpha: presensiAlpha ?? this.presensiAlpha,
     );
   }
 
@@ -247,6 +300,10 @@ class JadwalModel {
     }
 
     return info.join(' • ');
+  }
+
+  int get totalPresensi {
+    return presensiHadir + presensiIzin + presensiSakit + presensiAlpha;
   }
 
   @override

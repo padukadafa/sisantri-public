@@ -373,13 +373,13 @@ class _AddEditJadwalPageNewState extends ConsumerState<AddEditJadwalPage> {
   Future<void> _addJadwal(JadwalModel jadwal) async {
     final docRef = await FirebaseFirestore.instance
         .collection('jadwal')
-        .add(jadwal.toJson());
+        .add(jadwal.toNewFirebaseData());
 
     await AttendanceService.generateDefaultAttendanceForJadwal(
       jadwalId: docRef.id,
       createdBy: 'admin',
       createdByName: 'Admin',
-      poin: jadwal.poin,
+      jadwal: jadwal,
     );
 
     await MessagingHelper.sendPengumumanToSantri(

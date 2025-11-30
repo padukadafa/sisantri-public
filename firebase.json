@@ -1,1 +1,26 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"belajar-login-system","appId":"1:266005122727:android:81bd4f15e287243c03d582","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"belajar-login-system","configurations":{"android":"1:266005122727:android:81bd4f15e287243c03d582","ios":"1:266005122727:ios:50ea700cef873f2b03d582"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "belajar-login-system",
+          "appId": "1:266005122727:android:81bd4f15e287243c03d582",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "belajar-login-system",
+          "configurations": {
+            "android": "1:266005122727:android:81bd4f15e287243c03d582",
+            "ios": "1:266005122727:ios:50ea700cef873f2b03d582"
+          }
+        }
+      }
+    }
+  }
+}

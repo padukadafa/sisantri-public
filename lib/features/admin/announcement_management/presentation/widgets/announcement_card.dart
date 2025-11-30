@@ -23,43 +23,66 @@ class AnnouncementCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      onTap: () {
-        Navigator.of(context).push(
-          MaterialPageRoute(
-            builder: (_) => AnnouncementDetailPage(announcement: pengumuman),
-          ),
-        );
-      },
-      child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        elevation: pengumuman.isHighPriority ? 4 : 2,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: pengumuman.isHighPriority
-              ? const BorderSide(color: Colors.red, width: 2)
-              : BorderSide.none,
-        ),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(12),
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                AnnouncementCardHeader(pengumuman: pengumuman),
-                const SizedBox(height: 8),
-
-                AnnouncementCardContent(pengumuman: pengumuman),
-                const SizedBox(height: 12),
-
-                AnnouncementCardChips(pengumuman: pengumuman),
-                const SizedBox(height: 8),
-
-                AnnouncementCardFooter(pengumuman: pengumuman),
-              ],
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      elevation: pengumuman.isHighPriority ? 4 : 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: pengumuman.isHighPriority
+            ? const BorderSide(color: Colors.red, width: 2)
+            : BorderSide.none,
+      ),
+      child: InkWell(
+        onTap: () {
+          Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => AnnouncementDetailPage(announcement: pengumuman),
             ),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    child: AnnouncementCardHeader(pengumuman: pengumuman),
+                  ),
+                  PopupMenuButton<String>(
+                    icon: const Icon(Icons.more_vert),
+                    onSelected: (value) {
+                      if (value == 'delete' && onDelete != null) {
+                        onDelete!();
+                      }
+                    },
+                    itemBuilder: (context) => [
+                      const PopupMenuItem(
+                        value: 'delete',
+                        child: Row(
+                          children: [
+                            Icon(Icons.delete, color: Colors.red, size: 20),
+                            SizedBox(width: 8),
+                            Text('Hapus'),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+
+              AnnouncementCardContent(pengumuman: pengumuman),
+              const SizedBox(height: 12),
+
+              AnnouncementCardChips(pengumuman: pengumuman),
+              const SizedBox(height: 8),
+
+              AnnouncementCardFooter(pengumuman: pengumuman),
+            ],
           ),
         ),
       ),

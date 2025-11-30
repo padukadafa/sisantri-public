@@ -6,7 +6,7 @@ import 'package:sisantri/core/theme/app_theme.dart';
 import 'package:sisantri/shared/models/user_model.dart';
 import 'package:sisantri/shared/models/jadwal_model.dart';
 import 'package:sisantri/shared/services/auth_service.dart';
-import 'package:sisantri/shared/helpers/messaging_helper.dart';
+import 'package:sisantri/shared/services/presensi_aggregate_service.dart';
 
 final santriListProvider = FutureProvider<List<UserModel>>((ref) async {
   return await AuthService.getSantriList();
@@ -19,8 +19,6 @@ final attendanceStatusProvider =
       if (jadwalId == null) return {};
 
       try {
-        // Query presensi berdasarkan jadwalId (activity) saja
-        // Tidak perlu filter timestamp karena satu jadwal = satu presensi per user
         final snapshot = await FirebaseFirestore.instance
             .collection('presensi')
             .where('jadwalId', isEqualTo: jadwalId)
@@ -34,7 +32,6 @@ final attendanceStatusProvider =
 
         return statusMap;
       } catch (e) {
-        // Error loading attendance status
         return {};
       }
     });
@@ -223,6 +220,7 @@ class _ManualAttendancePageState extends ConsumerState<ManualAttendancePage> {
           IconButton(
             icon: Icon(_isSelectMode ? Icons.close : Icons.checklist),
             onPressed: () {
+              if (_selectedActivity == null) return;
               setState(() {
                 _isSelectMode = !_isSelectMode;
                 if (!_isSelectMode) {
@@ -625,6 +623,10 @@ class _ManualAttendancePageState extends ConsumerState<ManualAttendancePage> {
       itemBuilder: (context, index) {
         final santri = filteredSantri[index];
         final isSelected = _selectedSantri.contains(santri.id);
+        final currentStatus =
+            _santriAttendanceStatus[santri.id] ??
+            existingStatusMap[santri.id] ??
+            'alpha';
 
         return Card(
           margin: const EdgeInsets.only(bottom: 8),
@@ -640,15 +642,17 @@ class _ManualAttendancePageState extends ConsumerState<ManualAttendancePage> {
             leading: _isSelectMode
                 ? Checkbox(
                     value: isSelected,
-                    onChanged: (value) {
-                      setState(() {
-                        if (value == true) {
-                          _selectedSantri.add(santri.id);
-                        } else {
-                          _selectedSantri.remove(santri.id);
-                        }
-                      });
-                    },
+                    onChanged: currentStatus == 'hadir'
+                        ? null // Disable checkbox jika sudah hadir
+                        : (value) {
+                            setState(() {
+                              if (value == true) {
+                                _selectedSantri.add(santri.id);
+                              } else {
+                                _selectedSantri.remove(santri.id);
+                              }
+                            });
+                          },
                   )
                 : CircleAvatar(
                     backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
@@ -681,64 +685,96 @@ class _ManualAttendancePageState extends ConsumerState<ManualAttendancePage> {
                           _santriAttendanceStatus[santri.id] ??
                           existingStatusMap[santri.id] ??
                           'alpha',
-                      decoration: const InputDecoration(
-                        contentPadding: EdgeInsets.symmetric(
+                      decoration: InputDecoration(
+                        contentPadding: const EdgeInsets.symmetric(
                           horizontal: 8,
                           vertical: 4,
                         ),
-                        border: OutlineInputBorder(),
+                        border: const OutlineInputBorder(),
                         isDense: true,
+                        filled: _selectedActivity == null,
+                        fillColor: _selectedActivity == null
+                            ? Colors.grey.shade200
+                            : null,
                       ),
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'alpha',
-                          child: Row(
-                            children: [
-                              Icon(Icons.cancel, color: Colors.red, size: 16),
-                              SizedBox(width: 4),
-                              Text('Alpha', style: TextStyle(fontSize: 12)),
-                            ],
-                          ),
-                        ),
-                        DropdownMenuItem(
-                          value: 'hadir',
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.check_circle,
-                                color: Colors.green,
-                                size: 16,
+                      disabledHint: const Row(
+                        children: [
+                          Icon(Icons.block, color: Colors.grey, size: 16),
+                          SizedBox(width: 4),
+                        ],
+                      ),
+                      items: _selectedActivity == null
+                          ? null
+                          : const [
+                              DropdownMenuItem(
+                                value: 'alpha',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.cancel,
+                                      color: Colors.red,
+                                      size: 16,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Alpha',
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              SizedBox(width: 4),
-                              Text('Hadir', style: TextStyle(fontSize: 12)),
-                            ],
-                          ),
-                        ),
-                        DropdownMenuItem(
-                          value: 'izin',
-                          child: Row(
-                            children: [
-                              Icon(Icons.info, color: Colors.orange, size: 16),
-                              SizedBox(width: 4),
-                              Text('Izin', style: TextStyle(fontSize: 12)),
-                            ],
-                          ),
-                        ),
-                        DropdownMenuItem(
-                          value: 'sakit',
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.medical_information,
-                                color: Colors.blue,
-                                size: 16,
+                              DropdownMenuItem(
+                                value: 'hadir',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.check_circle,
+                                      color: Colors.green,
+                                      size: 16,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Hadir',
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              SizedBox(width: 4),
-                              Text('Sakit', style: TextStyle(fontSize: 12)),
+                              DropdownMenuItem(
+                                value: 'izin',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.info,
+                                      color: Colors.orange,
+                                      size: 16,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Izin',
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              DropdownMenuItem(
+                                value: 'sakit',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.medical_information,
+                                      color: Colors.blue,
+                                      size: 16,
+                                    ),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Sakit',
+                                      style: TextStyle(fontSize: 12),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ],
-                          ),
-                        ),
-                      ],
                       onChanged: _selectedActivity == null
                           ? null
                           : (value) {
@@ -752,7 +788,7 @@ class _ManualAttendancePageState extends ConsumerState<ManualAttendancePage> {
                             },
                     ),
                   ),
-            onTap: _isSelectMode
+            onTap: _isSelectMode && currentStatus != 'hadir'
                 ? () {
                     setState(() {
                       if (isSelected) {
@@ -767,19 +803,6 @@ class _ManualAttendancePageState extends ConsumerState<ManualAttendancePage> {
         );
       },
     );
-  }
-
-  Color _getStatusColor(String status) {
-    switch (status) {
-      case 'hadir':
-        return Colors.green;
-      case 'izin':
-        return Colors.orange;
-      case 'alpha':
-        return Colors.red;
-      default:
-        return Colors.grey;
-    }
   }
 
   String _getStatusLabel(String status) {
@@ -812,7 +835,6 @@ class _ManualAttendancePageState extends ConsumerState<ManualAttendancePage> {
     try {
       final firestore = FirebaseFirestore.instance;
 
-      // Cek apakah sudah ada presensi untuk user dan jadwal ini
       final existingSnapshot = await firestore
           .collection('presensi')
           .where('userId', isEqualTo: santri.id)
@@ -820,8 +842,12 @@ class _ManualAttendancePageState extends ConsumerState<ManualAttendancePage> {
           .limit(1)
           .get();
 
+      String? oldStatus;
       if (existingSnapshot.docs.isNotEmpty) {
-        // Update presensi yang sudah ada
+        // Get old status untuk decrement counter lama
+        final docData = existingSnapshot.docs.first.data();
+        oldStatus = docData['status'] as String?;
+
         final docId = existingSnapshot.docs.first.id;
         await firestore.collection('presensi').doc(docId).update({
           'status': attendanceStatus,
@@ -832,10 +858,10 @@ class _ManualAttendancePageState extends ConsumerState<ManualAttendancePage> {
         });
       } else {
         // Create attendance record baru
-        await firestore.collection('presensi').doc().set({
+        await firestore.collection('presensi').add({
           'userId': santri.id,
           'userName': santri.nama,
-          'activity': _selectedActivity,
+          'jadwalId': _selectedActivity,
           'status': attendanceStatus,
           'timestamp': FieldValue.serverTimestamp(),
           'recordedBy': AuthService.currentUserId,
@@ -845,16 +871,91 @@ class _ManualAttendancePageState extends ConsumerState<ManualAttendancePage> {
         });
       }
 
-      // Log activity
-      await firestore.collection('activities').add({
-        'type': 'manual_attendance',
-        'title': 'Absensi Manual',
-        'description':
-            '${santri.nama} - $_selectedActivity: ${_getStatusLabel(attendanceStatus)}',
-        'userId': santri.id,
-        'recordedBy': AuthService.currentUserId,
-        'timestamp': FieldValue.serverTimestamp(),
-      });
+      // Update aggregates
+      if (_selectedActivity != null) {
+        try {
+          final jadwalDoc = await firestore
+              .collection('jadwal')
+              .doc(_selectedActivity)
+              .get();
+
+          if (jadwalDoc.exists) {
+            final jadwalData = jadwalDoc.data();
+            final tanggalJadwal =
+                (jadwalData?['tanggal'] as Timestamp?)?.toDate() ??
+                DateTime.now();
+            final poin = jadwalData?['poin'] as int? ?? 1;
+
+            final newPoin = attendanceStatus == 'hadir' ? poin : -poin;
+
+            await PresensiAggregateService.updateAggregates(
+              userId: santri.id,
+              tanggal: tanggalJadwal,
+              status: attendanceStatus,
+              poin: newPoin,
+              oldStatus: oldStatus,
+            );
+          }
+        } catch (e) {
+          // Log error tapi jangan block proses utama
+          debugPrint('Error updating aggregates: $e');
+        }
+      }
+
+      // Update counter di jadwal
+      final jadwalUpdate = <String, dynamic>{
+        "updatedAt": FieldValue.serverTimestamp(),
+      };
+
+      // Decrement counter lama jika ada perubahan status
+      if (oldStatus != null && oldStatus != attendanceStatus) {
+        switch (oldStatus) {
+          case 'hadir':
+            jadwalUpdate['presensiHadir'] = FieldValue.increment(-1);
+            break;
+          case 'izin':
+            jadwalUpdate['presensiIzin'] = FieldValue.increment(-1);
+            break;
+          case 'sakit':
+            jadwalUpdate['presensiSakit'] = FieldValue.increment(-1);
+            break;
+          case 'alpha':
+            jadwalUpdate['presensiAlpha'] = FieldValue.increment(-1);
+            break;
+        }
+      }
+
+      // Increment counter baru
+      switch (attendanceStatus) {
+        case 'hadir':
+          jadwalUpdate['presensiHadir'] = oldStatus == null
+              ? FieldValue.increment(1)
+              : (jadwalUpdate['presensiHadir'] ?? FieldValue.increment(1));
+          break;
+        case 'izin':
+          jadwalUpdate['presensiIzin'] = oldStatus == null
+              ? FieldValue.increment(1)
+              : (jadwalUpdate['presensiIzin'] ?? FieldValue.increment(1));
+          break;
+        case 'sakit':
+          jadwalUpdate['presensiSakit'] = oldStatus == null
+              ? FieldValue.increment(1)
+              : (jadwalUpdate['presensiSakit'] ?? FieldValue.increment(1));
+          break;
+        case 'alpha':
+          jadwalUpdate['presensiAlpha'] = oldStatus == null
+              ? FieldValue.increment(1)
+              : (jadwalUpdate['presensiAlpha'] ?? FieldValue.increment(1));
+          break;
+      }
+
+      if (_selectedActivity != null) {
+        final jadwalRef = firestore.collection("jadwal").doc(_selectedActivity);
+        final jadwalSnapshot = await jadwalRef.get();
+        if (jadwalSnapshot.exists) {
+          await jadwalRef.update(jadwalUpdate);
+        }
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).clearSnackBars();
@@ -875,21 +976,7 @@ class _ManualAttendancePageState extends ConsumerState<ManualAttendancePage> {
           ),
         );
 
-        // Refresh attendance status provider to reflect changes
         ref.invalidate(attendanceStatusProvider(_selectedActivity));
-      }
-
-      // Send notification to dewan guru if alpha
-      if (attendanceStatus == 'alpha') {
-        try {
-          await MessagingHelper.sendPresensiNotificationToGuru(
-            santriName: santri.nama,
-            activity: _selectedActivity!,
-            status: 'Alpha',
-          );
-        } catch (e) {
-          // Error sending notification
-        }
       }
     } catch (e) {
       if (mounted) {
@@ -922,77 +1009,14 @@ class _ManualAttendancePageState extends ConsumerState<ManualAttendancePage> {
 
     if (_selectedSantri.isEmpty) return;
 
-    // Show dialog to select bulk status
-    final bulkStatus = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Pilih Status untuk Semua'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Pilih status kehadiran untuk ${_selectedSantri.length} santri yang dipilih:',
-            ),
-            const SizedBox(height: 16),
-            DropdownButtonFormField<String>(
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Status Kehadiran',
-              ),
-              items: const [
-                DropdownMenuItem(
-                  value: 'alpha',
-                  child: Row(
-                    children: [
-                      Icon(Icons.cancel, color: Colors.red, size: 20),
-                      SizedBox(width: 8),
-                      Text('Alpha'),
-                    ],
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: 'hadir',
-                  child: Row(
-                    children: [
-                      Icon(Icons.check_circle, color: Colors.green, size: 20),
-                      SizedBox(width: 8),
-                      Text('Hadir'),
-                    ],
-                  ),
-                ),
-                DropdownMenuItem(
-                  value: 'izin',
-                  child: Row(
-                    children: [
-                      Icon(Icons.info, color: Colors.orange, size: 20),
-                      SizedBox(width: 8),
-                      Text('Izin'),
-                    ],
-                  ),
-                ),
-              ],
-              onChanged: (value) => Navigator.pop(context, value),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Batal'),
-          ),
-        ],
-      ),
-    );
-
-    if (bulkStatus == null) return;
+    // Batch absensi hanya untuk status HADIR
+    const bulkStatus = 'hadir';
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Konfirmasi Absensi Massal'),
-        content: Text(
-          'Apakah Anda yakin ingin mencatat absensi untuk ${_selectedSantri.length} santri dengan status "${_getStatusLabel(bulkStatus)}"?',
-        ),
+        content: Text('Tandai ${_selectedSantri.length} santri sebagai hadir?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -1000,16 +1024,38 @@ class _ManualAttendancePageState extends ConsumerState<ManualAttendancePage> {
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _getStatusColor(bulkStatus),
-            ),
-            child: const Text('Ya, Catat'),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+            child: const Text('Ya, Tandai Hadir'),
           ),
         ],
       ),
     );
 
     if (confirmed != true) return;
+
+    // Show loading dialog
+    if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => PopScope(
+          canPop: false,
+          child: AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 16),
+                Text(
+                  'Memproses absensi ${_selectedSantri.length} santri...',
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     try {
       final firestore = FirebaseFirestore.instance;
@@ -1022,6 +1068,17 @@ class _ManualAttendancePageState extends ConsumerState<ManualAttendancePage> {
           .where((santri) => _selectedSantri.contains(santri.id))
           .toList();
 
+      // Track counter changes untuk jadwal
+      final Map<String, int> counterChanges = {
+        'presensiHadir': 0,
+        'presensiIzin': 0,
+        'presensiSakit': 0,
+        'presensiAlpha': 0,
+      };
+
+      // Track aggregate updates
+      final List<Map<String, dynamic>> aggregateUpdates = [];
+
       // Create or update attendance records
       for (final santri in selectedSantriData) {
         // Cek apakah sudah ada presensi untuk user dan jadwal ini
@@ -1033,6 +1090,61 @@ class _ManualAttendancePageState extends ConsumerState<ManualAttendancePage> {
             .get();
 
         if (existingSnapshot.docs.isNotEmpty) {
+          // Get old status untuk adjust counter
+          final docData = existingSnapshot.docs.first.data();
+          final oldStatus = docData['status'] as String?;
+          final oldPoinDiperoleh = docData['poinDiperoleh'] as int? ?? 0;
+
+          // Track untuk aggregate update (perlu oldStatus dan oldPoin)
+          aggregateUpdates.add({
+            'userId': santri.id,
+            'oldStatus': oldStatus,
+            'oldPoin': oldPoinDiperoleh,
+            'isUpdate': true,
+          });
+
+          // Decrement old status counter
+          if (oldStatus != null && oldStatus != bulkStatus) {
+            switch (oldStatus) {
+              case 'hadir':
+                counterChanges['presensiHadir'] =
+                    (counterChanges['presensiHadir'] ?? 0) - 1;
+                break;
+              case 'izin':
+                counterChanges['presensiIzin'] =
+                    (counterChanges['presensiIzin'] ?? 0) - 1;
+                break;
+              case 'sakit':
+                counterChanges['presensiSakit'] =
+                    (counterChanges['presensiSakit'] ?? 0) - 1;
+                break;
+              case 'alpha':
+                counterChanges['presensiAlpha'] =
+                    (counterChanges['presensiAlpha'] ?? 0) - 1;
+                break;
+            }
+
+            // Increment new status counter
+            switch (bulkStatus) {
+              case 'hadir':
+                counterChanges['presensiHadir'] =
+                    (counterChanges['presensiHadir'] ?? 0) + 1;
+                break;
+              case 'izin':
+                counterChanges['presensiIzin'] =
+                    (counterChanges['presensiIzin'] ?? 0) + 1;
+                break;
+              case 'sakit':
+                counterChanges['presensiSakit'] =
+                    (counterChanges['presensiSakit'] ?? 0) + 1;
+                break;
+              case 'alpha':
+                counterChanges['presensiAlpha'] =
+                    (counterChanges['presensiAlpha'] ?? 0) + 1;
+                break;
+            }
+          }
+
           // Update existing record
           final docRef = firestore
               .collection('presensi')
@@ -1045,6 +1157,34 @@ class _ManualAttendancePageState extends ConsumerState<ManualAttendancePage> {
             'timestamp': FieldValue.serverTimestamp(),
           });
         } else {
+          // Track untuk aggregate create (no oldStatus)
+          aggregateUpdates.add({
+            'userId': santri.id,
+            'oldStatus': null,
+            'oldPoin': null,
+            'isUpdate': false,
+          });
+
+          // Increment counter untuk create baru
+          switch (bulkStatus) {
+            case 'hadir':
+              counterChanges['presensiHadir'] =
+                  (counterChanges['presensiHadir'] ?? 0) + 1;
+              break;
+            case 'izin':
+              counterChanges['presensiIzin'] =
+                  (counterChanges['presensiIzin'] ?? 0) + 1;
+              break;
+            case 'sakit':
+              counterChanges['presensiSakit'] =
+                  (counterChanges['presensiSakit'] ?? 0) + 1;
+              break;
+            case 'alpha':
+              counterChanges['presensiAlpha'] =
+                  (counterChanges['presensiAlpha'] ?? 0) + 1;
+              break;
+          }
+
           // Create new record
           final presensiRef = firestore.collection('presensi').doc();
           batch.set(presensiRef, {
@@ -1076,7 +1216,74 @@ class _ManualAttendancePageState extends ConsumerState<ManualAttendancePage> {
         _santriAttendanceStatus[santri.id] = bulkStatus;
       }
 
+      // Update jadwal counters
+      if (_selectedActivity != null) {
+        final jadwalRef = firestore.collection('jadwal').doc(_selectedActivity);
+        final jadwalUpdate = <String, dynamic>{
+          'updatedAt': FieldValue.serverTimestamp(),
+        };
+
+        // Apply counter changes
+        if (counterChanges['presensiHadir'] != 0) {
+          jadwalUpdate['presensiHadir'] = FieldValue.increment(
+            counterChanges['presensiHadir']!,
+          );
+        }
+        if (counterChanges['presensiIzin'] != 0) {
+          jadwalUpdate['presensiIzin'] = FieldValue.increment(
+            counterChanges['presensiIzin']!,
+          );
+        }
+        if (counterChanges['presensiSakit'] != 0) {
+          jadwalUpdate['presensiSakit'] = FieldValue.increment(
+            counterChanges['presensiSakit']!,
+          );
+        }
+        if (counterChanges['presensiAlpha'] != 0) {
+          jadwalUpdate['presensiAlpha'] = FieldValue.increment(
+            counterChanges['presensiAlpha']!,
+          );
+        }
+
+        batch.update(jadwalRef, jadwalUpdate);
+      }
+
       await batch.commit();
+
+      // Update aggregates untuk semua santri yang diupdate
+      // Get jadwal data untuk tanggal
+      if (_selectedActivity != null) {
+        try {
+          final jadwalDoc = await firestore
+              .collection('jadwal')
+              .doc(_selectedActivity)
+              .get();
+
+          if (jadwalDoc.exists) {
+            final jadwalData = jadwalDoc.data();
+            final tanggalJadwal =
+                (jadwalData?['tanggal'] as Timestamp?)?.toDate() ?? now;
+            final poin = jadwalData?['poin'] as int? ?? 1;
+
+            for (final updateInfo in aggregateUpdates) {
+              await PresensiAggregateService.updateAggregates(
+                userId: updateInfo['userId'],
+                tanggal: tanggalJadwal,
+                status: bulkStatus,
+                poin: bulkStatus == 'hadir' ? poin : 0,
+                oldStatus: updateInfo['oldStatus'],
+              );
+            }
+          }
+        } catch (e) {
+          debugPrint('Error updating aggregates: $e');
+        }
+      }
+
+      // Close loading dialog
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -1104,6 +1311,11 @@ class _ManualAttendancePageState extends ConsumerState<ManualAttendancePage> {
         ref.invalidate(attendanceStatusProvider(_selectedActivity));
       }
     } catch (e) {
+      // Close loading dialog on error
+      if (mounted) {
+        Navigator.of(context).pop();
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

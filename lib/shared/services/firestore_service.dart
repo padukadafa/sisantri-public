@@ -2,8 +2,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sisantri/features/shared/announcement/data/models/announcement_model.dart';
 import 'package:sisantri/shared/services/presensi_service.dart';
 import 'package:sisantri/shared/services/announcement_service.dart';
+import 'package:sisantri/shared/services/presensi_aggregate_service.dart';
 import '../models/user_model.dart';
-import '../models/jadwal_pengajian_model.dart';
 import '../models/jadwal_kegiatan_model.dart';
 import '../models/presensi_model.dart';
 import '../models/leaderboard_model.dart';
@@ -52,107 +52,6 @@ class FirestoreService {
     }
   }
 
-  // ===== JADWAL PENGAJIAN OPERATIONS =====
-
-  /// Get jadwal pengajian
-  static Stream<List<JadwalPengajianModel>> getJadwalPengajian() {
-    return _firestore
-        .collection('jadwal_pengajian')
-        .orderBy('tanggal', descending: false)
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map(
-                (doc) => JadwalPengajianModel.fromJson({
-                  'id': doc.id,
-                  ...doc.data(),
-                }),
-              )
-              .toList(),
-        );
-  }
-
-  /// Tambah jadwal pengajian
-  static Future<void> addJadwalPengajian(JadwalPengajianModel jadwal) async {
-    try {
-      await _firestore.collection('jadwal_pengajian').add(jadwal.toJson());
-    } catch (e) {
-      throw Exception('Error menambah jadwal pengajian: $e');
-    }
-  }
-
-  /// Update jadwal pengajian
-  static Future<void> updateJadwalPengajian(
-    String id,
-    JadwalPengajianModel jadwal,
-  ) async {
-    try {
-      await _firestore
-          .collection('jadwal_pengajian')
-          .doc(id)
-          .update(jadwal.toJson());
-    } catch (e) {
-      throw Exception('Error mengupdate jadwal pengajian: $e');
-    }
-  }
-
-  /// Delete jadwal pengajian
-  static Future<void> deleteJadwalPengajian(String id) async {
-    try {
-      await _firestore.collection('jadwal_pengajian').doc(id).delete();
-    } catch (e) {
-      throw Exception('Error menghapus jadwal pengajian: $e');
-    }
-  }
-
-  // ===== JADWAL KEGIATAN OPERATIONS =====
-
-  /// Get jadwal kegiatan
-  static Stream<List<JadwalKegiatanModel>> getJadwalKegiatan() {
-    return _firestore
-        .collection('jadwal_kegiatan')
-        .orderBy('tanggal', descending: false)
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map(
-                (doc) =>
-                    JadwalKegiatanModel.fromJson({'id': doc.id, ...doc.data()}),
-              )
-              .toList(),
-        );
-  }
-
-  /// Get jadwal kegiatan hari ini dan besok
-  static Stream<List<JadwalKegiatanModel>> getUpcomingKegiatan() {
-    final now = DateTime.now();
-    final tomorrow = DateTime(now.year, now.month, now.day + 2); // sampai besok
-
-    return _firestore
-        .collection('jadwal_kegiatan')
-        .where('tanggal', isGreaterThanOrEqualTo: now)
-        .where('tanggal', isLessThan: tomorrow)
-        .orderBy('tanggal', descending: false)
-        .snapshots()
-        .map(
-          (snapshot) => snapshot.docs
-              .map(
-                (doc) =>
-                    JadwalKegiatanModel.fromJson({'id': doc.id, ...doc.data()}),
-              )
-              .toList(),
-        );
-  }
-
-  /// Tambah jadwal kegiatan
-  static Future<void> addJadwalKegiatan(JadwalKegiatanModel jadwal) async {
-    try {
-      await _firestore.collection('jadwal_kegiatan').add(jadwal.toJson());
-    } catch (e) {
-      throw Exception('Error menambah jadwal kegiatan: $e');
-    }
-  }
-
   // ===== PRESENSI OPERATIONS =====
 
   /// Get presensi by user ID
@@ -174,12 +73,18 @@ class FirestoreService {
   /// Tambah presensi
   static Future<void> addPresensi(PresensiModel presensi) async {
     try {
-      // Tambah presensi
       await _firestore.collection('presensi').add(presensi.toJson());
 
-      // Update poin user
       final poin = presensi.poin;
       await updateUserPoin(presensi.userId, poin);
+
+      // Update aggregates
+      await PresensiAggregateService.updateAggregates(
+        userId: presensi.userId,
+        tanggal: presensi.timestamp ?? DateTime.now(),
+        status: presensi.status.name,
+        poin: presensi.poin,
+      );
     } catch (e) {
       throw Exception('Error menambah presensi: $e');
     }
@@ -187,7 +92,6 @@ class FirestoreService {
 
   // ===== LEADERBOARD OPERATIONS =====
 
-  /// Hitung total poin user berdasarkan presensi hadir
   static Future<int> calculateUserPoints(String userId) async {
     try {
       // Ambil semua presensi hadir user

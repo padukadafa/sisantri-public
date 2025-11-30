@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sisantri/core/theme/app_theme.dart';
 import 'package:sisantri/shared/models/jadwal_model.dart';
+import 'package:sisantri/shared/models/presensi_aggregate_model.dart';
 
 import '../providers/schedule_providers.dart';
 import '../widgets/schedule_filter_menu.dart';
@@ -12,6 +13,24 @@ import 'add_edit_jadwal_page.dart';
 
 class ScheduleManagementPage extends ConsumerWidget {
   const ScheduleManagementPage({super.key});
+
+  // Helper method untuk generate periode key
+  String _getPeriodeKey(String periode, DateTime date) {
+    switch (periode) {
+      case 'daily':
+        return PeriodeKeyHelper.daily(date);
+      case 'weekly':
+        return PeriodeKeyHelper.weekly(date);
+      case 'monthly':
+        return PeriodeKeyHelper.monthly(date);
+      case 'semester':
+        return PeriodeKeyHelper.semester(date);
+      case 'yearly':
+        return PeriodeKeyHelper.yearly(date);
+      default:
+        return PeriodeKeyHelper.daily(date);
+    }
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -212,6 +231,51 @@ class ScheduleManagementPage extends ConsumerWidget {
       await batch.commit();
 
       EasyLoading.dismiss();
+
+      // Update aggregates untuk semua periode
+      WriteBatch aggregateBatch = FirebaseFirestore.instance.batch();
+      final periodes = ['daily', 'weekly', 'monthly', 'semester', 'yearly'];
+
+      for (var doc in presensis.docs) {
+        final userId = doc.data()['userId'] as String;
+        final status = doc.data()['status'] as String? ?? 'alpha';
+        final poinDiperoleh = doc.data()['totalPoin'] as int? ?? 0;
+        final tanggalJadwal = jadwal.tanggal;
+
+        for (final periode in periodes) {
+          final periodeKey = _getPeriodeKey(periode, tanggalJadwal);
+          final docId = '${userId}_${periode}_$periodeKey';
+          final aggregateRef = FirebaseFirestore.instance
+              .collection('presensi_aggregates')
+              .doc(docId);
+
+          final updateData = <String, dynamic>{'lastUpdated': Timestamp.now()};
+
+          // Decrement status counter
+          switch (status) {
+            case 'hadir':
+              updateData['totalHadir'] = FieldValue.increment(-1);
+              break;
+            case 'izin':
+              updateData['totalIzin'] = FieldValue.increment(-1);
+              break;
+            case 'sakit':
+              updateData['totalSakit'] = FieldValue.increment(-1);
+              break;
+            case 'alpha':
+              updateData['totalAlpha'] = FieldValue.increment(-1);
+              break;
+          }
+
+          // Decrement poin
+          if (poinDiperoleh > 0) {
+            updateData['totalPoin'] = FieldValue.increment(-poinDiperoleh);
+          }
+
+          aggregateBatch.update(aggregateRef, updateData);
+        }
+      }
+      await aggregateBatch.commit();
 
       ref.invalidate(jadwalProvider);
 

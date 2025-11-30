@@ -54,8 +54,24 @@ class PemateriSelector extends ConsumerWidget {
           );
         }
 
+        // Deduplikasi: ambil hanya guru dengan ID unik
+        final uniqueGuru = <String, dynamic>{};
+        for (final guru in dewanGuruList) {
+          if (!uniqueGuru.containsKey(guru.id)) {
+            uniqueGuru[guru.id] = guru;
+          }
+        }
+        final uniqueDewanGuru = uniqueGuru.values.toList();
+
+        // Validasi: cek apakah selectedPemateriId ada dalam list
+        final validatedValue =
+            selectedPemateriId != null &&
+                uniqueDewanGuru.any((g) => g.id == selectedPemateriId)
+            ? selectedPemateriId
+            : null;
+
         return DropdownButtonFormField<String>(
-          value: selectedPemateriId,
+          value: validatedValue,
           decoration: const InputDecoration(
             labelText: 'Pilih Pemateri/Ustadz',
             hintText: 'Pilih dari daftar dewan guru',
@@ -69,7 +85,7 @@ class PemateriSelector extends ConsumerWidget {
 
               child: Text('-- Tidak ada pemateri --'),
             ),
-            ...dewanGuruList.map((guru) {
+            ...uniqueDewanGuru.map((guru) {
               return DropdownMenuItem<String>(
                 value: guru.id,
 
@@ -85,7 +101,7 @@ class PemateriSelector extends ConsumerWidget {
             if (value == null) {
               onPemateriChanged(null, null);
             } else {
-              final selectedGuru = dewanGuruList.firstWhere(
+              final selectedGuru = uniqueDewanGuru.firstWhere(
                 (guru) => guru.id == value,
               );
               onPemateriChanged(value, selectedGuru.nama);

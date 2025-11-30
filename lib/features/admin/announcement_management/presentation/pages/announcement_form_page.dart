@@ -4,9 +4,6 @@ import 'package:sisantri/shared/services/auth_service.dart';
 import 'package:sisantri/shared/services/announcement_service.dart';
 import 'package:sisantri/features/shared/announcement/data/models/announcement_model.dart';
 import 'package:sisantri/features/admin/announcement_management/presentation/widgets/announcement_form_fields.dart';
-import 'package:sisantri/features/admin/announcement_management/presentation/widgets/announcement_category_dropdown.dart';
-import 'package:sisantri/features/admin/announcement_management/presentation/widgets/announcement_target_dropdown.dart';
-import 'package:sisantri/features/admin/announcement_management/presentation/widgets/announcement_date_picker.dart';
 import 'package:sisantri/features/admin/announcement_management/presentation/widgets/announcement_form_buttons.dart';
 
 class AnnouncementFormPage extends ConsumerStatefulWidget {
@@ -24,10 +21,6 @@ class _AnnouncementFormPageState extends ConsumerState<AnnouncementFormPage> {
   final _judulController = TextEditingController();
   final _kontenController = TextEditingController();
 
-  String _kategori = 'umum';
-  String _targetAudience = 'all';
-  DateTime _tanggalMulai = DateTime.now();
-  DateTime? _tanggalBerakhir;
   bool _isLoading = false;
 
   @override
@@ -42,10 +35,6 @@ class _AnnouncementFormPageState extends ConsumerState<AnnouncementFormPage> {
     final announcement = widget.announcement!;
     _judulController.text = announcement.judul;
     _kontenController.text = announcement.konten;
-    _kategori = announcement.kategori;
-    _targetAudience = announcement.targetAudience;
-    _tanggalMulai = announcement.tanggalMulai;
-    _tanggalBerakhir = announcement.tanggalBerakhir;
   }
 
   @override
@@ -53,28 +42,6 @@ class _AnnouncementFormPageState extends ConsumerState<AnnouncementFormPage> {
     _judulController.dispose();
     _kontenController.dispose();
     super.dispose();
-  }
-
-  Future<void> _selectStartDate(BuildContext context) async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: _tanggalMulai,
-      firstDate: DateTime.now(),
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-    if (date != null) {
-      setState(() => _tanggalMulai = date);
-    }
-  }
-
-  Future<void> _selectEndDate(BuildContext context) async {
-    final date = await showDatePicker(
-      context: context,
-      initialDate: _tanggalBerakhir ?? _tanggalMulai,
-      firstDate: _tanggalMulai,
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-    setState(() => _tanggalBerakhir = date);
   }
 
   @override
@@ -104,48 +71,6 @@ class _AnnouncementFormPageState extends ConsumerState<AnnouncementFormPage> {
               judulController: _judulController,
               kontenController: _kontenController,
               isReadOnly: isView,
-            ),
-            const SizedBox(height: 16),
-
-            AnnouncementCategoryDropdown(
-              value: _kategori,
-              isReadOnly: isView,
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() => _kategori = value);
-                }
-              },
-            ),
-            const SizedBox(height: 16),
-
-            AnnouncementTargetDropdown(
-              value: _targetAudience,
-              isReadOnly: isView,
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() => _targetAudience = value);
-                }
-              },
-            ),
-            const SizedBox(height: 16),
-
-            AnnouncementDatePicker(
-              title: 'Tanggal Mulai',
-              selectedDate: _tanggalMulai,
-              icon: Icons.calendar_today,
-              isReadOnly: isView,
-              emptyText: '',
-              onTap: () => _selectStartDate(context),
-            ),
-            const SizedBox(height: 16),
-
-            AnnouncementDatePicker(
-              title: 'Tanggal Berakhir (Opsional)',
-              selectedDate: _tanggalBerakhir,
-              icon: Icons.event_busy,
-              isReadOnly: isView,
-              emptyText: 'Tidak ada batas waktu',
-              onTap: () => _selectEndDate(context),
             ),
             const SizedBox(height: 24),
 
@@ -224,16 +149,16 @@ class _AnnouncementFormPageState extends ConsumerState<AnnouncementFormPage> {
       id: widget.announcement?.id ?? '',
       judul: _judulController.text.trim(),
       konten: _kontenController.text.trim(),
-      kategori: _kategori,
+      kategori: 'umum',
       prioritas: 'medium',
       createdBy: currentUser.uid,
       createdByName: currentUser.displayName ?? 'Admin',
-      targetAudience: _targetAudience,
+      targetAudience: 'all',
       targetRoles: const [],
       targetClasses: const [],
       lampiranUrl: null,
-      tanggalMulai: _tanggalMulai,
-      tanggalBerakhir: _tanggalBerakhir,
+      tanggalMulai: now,
+      tanggalBerakhir: null,
       isPublished: published,
       isPinned: false,
       viewCount: widget.announcement?.viewCount ?? 0,

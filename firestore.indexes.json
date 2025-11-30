@@ -1,0 +1,59 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "presensi_aggregates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "periode",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "periodeKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "totalPoin",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "presensi_aggregates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "userId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "periode",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "periodeKey",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "presensi_aggregates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "periode",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "periodeKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "totalHadir",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ],
+  "fieldOverrides": []
+}

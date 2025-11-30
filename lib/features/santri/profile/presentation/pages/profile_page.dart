@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sisantri/core/theme/app_theme.dart';
 import 'package:sisantri/shared/services/auth_service.dart';
 import 'package:sisantri/shared/services/firestore_service.dart';
+import 'package:sisantri/shared/services/presensi_aggregate_service.dart';
 import 'package:sisantri/shared/models/user_model.dart';
 import 'package:sisantri/shared/widgets/logout_button.dart';
-import 'package:sisantri/features/dewan_guru/dashboard/presentation/pages/dewan_guru_dashboard_page.dart';
 import 'package:sisantri/features/santri/profile/presentation/pages/edit_profile_page.dart';
 import 'package:sisantri/features/santri/profile/presentation/pages/security_settings_page.dart';
 
@@ -20,7 +20,14 @@ final userTotalPointsProvider = FutureProvider.family<int, String>((
   ref,
   userId,
 ) async {
-  return await FirestoreService.calculateUserPoints(userId);
+  // Gunakan aggregate yearly untuk total poin
+  final yearlyAggregate = await PresensiAggregateService.getAggregate(
+    userId: userId,
+    periode: 'yearly',
+    date: DateTime.now(),
+  );
+
+  return yearlyAggregate?.totalPoin ?? 0;
 });
 
 class ProfilePage extends ConsumerWidget {
@@ -388,6 +395,22 @@ class ProfilePage extends ConsumerWidget {
             onTap: () {
               _showAboutDialog(context);
             },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 4, bottom: 8),
+      child: Row(
+        children: [
+          Icon(Icons.bar_chart, color: Colors.blue.shade700, size: 20),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
           ),
         ],
       ),

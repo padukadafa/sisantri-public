@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sisantri/features/admin/attendance_management/presentation/widgets/report/filter_dialog.dart';
 
 import '../widgets/report/attendance_report_provider.dart';
-import '../widgets/report/filter_dialog.dart';
 import '../widgets/report/statistics_grid.dart';
 import '../widgets/report/attendance_distribution.dart';
 import '../widgets/report/user_summary_card.dart';
@@ -33,10 +33,14 @@ class _AttendanceReportPageState extends ConsumerState<AttendanceReportPage>
     super.dispose();
   }
 
-  void _showFilterDialog(BuildContext context) {
-    showDialog(
+  void _showFilterBottomSheet(BuildContext context) {
+    showModalBottomSheet(
       context: context,
-      builder: (context) => const FilterDialog(),
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => const FilterBottomSheet(),
     );
   }
 
@@ -51,9 +55,8 @@ class _AttendanceReportPageState extends ConsumerState<AttendanceReportPage>
         showDialog(
           context: context,
           barrierDismissible: false,
-          builder: (context) => const Center(
-            child: CircularProgressIndicator(),
-          ),
+          builder: (context) =>
+              const Center(child: CircularProgressIndicator()),
         );
 
         try {
@@ -118,7 +121,7 @@ class _AttendanceReportPageState extends ConsumerState<AttendanceReportPage>
         actions: [
           IconButton(
             icon: const Icon(Icons.filter_list),
-            onPressed: () => _showFilterDialog(context),
+            onPressed: () => _showFilterBottomSheet(context),
           ),
         ],
         bottom: TabBar(
@@ -222,10 +225,7 @@ class _UserSummaryTab extends ConsumerWidget {
             itemBuilder: (context, index) {
               final entry = sortedEntries[index];
               final summary = entry.value;
-              return UserSummaryCard(
-                user: summary['user'],
-                summary: summary,
-              );
+              return UserSummaryCard(user: summary['user'], summary: summary);
             },
           );
         },
