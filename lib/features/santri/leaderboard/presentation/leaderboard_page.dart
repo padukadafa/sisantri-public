@@ -6,6 +6,8 @@ import 'package:sisantri/shared/services/firestore_service.dart';
 import 'package:sisantri/shared/services/auth_service.dart';
 import 'package:sisantri/shared/models/leaderboard_model.dart';
 import 'package:sisantri/shared/models/user_model.dart';
+import 'package:sisantri/shared/models/level_model.dart';
+import 'package:sisantri/shared/widgets/level_badge_widget.dart';
 
 /// Provider untuk current user
 final currentUserProvider = FutureProvider<UserModel?>((ref) async {
@@ -203,15 +205,28 @@ class LeaderboardPage extends ConsumerWidget {
       child: Column(
         children: [
           // User Info
-          CircleAvatar(
-            radius: 30,
-            backgroundColor: podiumColor.withOpacity(0.2),
-            backgroundImage: user.fotoProfil != null
-                ? NetworkImage(user.fotoProfil!)
-                : null,
-            child: user.fotoProfil == null
-                ? Icon(Icons.person, size: 30, color: podiumColor)
-                : null,
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              CircleAvatar(
+                radius: 30,
+                backgroundColor: podiumColor.withOpacity(0.2),
+                backgroundImage: user.fotoProfil != null
+                    ? NetworkImage(user.fotoProfil!)
+                    : null,
+                child: user.fotoProfil == null
+                    ? Icon(Icons.person, size: 30, color: podiumColor)
+                    : null,
+              ),
+              Positioned(
+                bottom: -2,
+                child: LevelBadgeWidget(
+                  totalPoin: user.poin,
+                  size: 22,
+                  showTitle: false,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 8),
           Text(
@@ -313,16 +328,30 @@ class LeaderboardPage extends ConsumerWidget {
 
             const SizedBox(width: 16),
 
-            // Profile Picture
-            CircleAvatar(
-              radius: 20,
-              backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
-              backgroundImage: user.fotoProfil != null
-                  ? NetworkImage(user.fotoProfil!)
-                  : null,
-              child: user.fotoProfil == null
-                  ? const Icon(Icons.person, color: AppTheme.primaryColor)
-                  : null,
+            // Profile Picture with Level Badge
+            Stack(
+              clipBehavior: Clip.none,
+              children: [
+                CircleAvatar(
+                  radius: 20,
+                  backgroundColor: AppTheme.primaryColor.withOpacity(0.1),
+                  backgroundImage: user.fotoProfil != null
+                      ? NetworkImage(user.fotoProfil!)
+                      : null,
+                  child: user.fotoProfil == null
+                      ? const Icon(Icons.person, color: AppTheme.primaryColor)
+                      : null,
+                ),
+                Positioned(
+                  bottom: -4,
+                  right: -4,
+                  child: LevelBadgeWidget(
+                    totalPoin: user.poin,
+                    size: 18,
+                    showTitle: false,
+                  ),
+                ),
+              ],
             ),
 
             const SizedBox(width: 16),
@@ -340,9 +369,27 @@ class LeaderboardPage extends ConsumerWidget {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  Text(
-                    'Santri Al-Awwabin',
-                    style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                  Row(
+                    children: [
+                      Text(
+                        LevelModel.fromPoin(user.poin).title,
+                        style: TextStyle(
+                          color: Color(
+                            int.parse(
+                              LevelModel.fromPoin(
+                                user.poin,
+                              ).color.replaceFirst('#', '0xFF'),
+                            ),
+                          ),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        ' • Santri Al-Awwabin',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      ),
+                    ],
                   ),
                 ],
               ),

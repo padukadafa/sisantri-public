@@ -4,6 +4,8 @@ import 'package:sisantri/features/shared/announcement/data/models/announcement_m
 
 import 'package:sisantri/shared/models/user_model.dart';
 import 'package:sisantri/shared/widgets/presensi_aggregate_stats_widget.dart';
+import 'package:sisantri/shared/widgets/level_progress_card.dart';
+import 'package:sisantri/shared/services/presensi_aggregate_service.dart';
 
 import '../providers/dashboard_providers.dart';
 import '../providers/stats_providers.dart';
@@ -36,6 +38,27 @@ class DashboardContent extends StatelessWidget {
           children: [
             const DashboardNotificationsSection(),
             const SizedBox(height: 20),
+            // Level Progress Card
+            if (user?.id != null)
+              FutureBuilder<int>(
+                future: PresensiAggregateService.getAggregate(
+                  userId: user!.id,
+                  periode: 'yearly',
+                  date: DateTime.now(),
+                ).then((agg) => agg?.totalPoin ?? 0),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const SizedBox.shrink();
+                  }
+                  final poin = snapshot.data ?? 0;
+                  return Column(
+                    children: [
+                      LevelProgressCard(totalPoin: poin),
+                      const SizedBox(height: 20),
+                    ],
+                  );
+                },
+              ),
             DashboardStatsCards(user: user, todayPresensi: todayPresensi),
             const SizedBox(height: 20),
             const DashboardAdditionalStats(),

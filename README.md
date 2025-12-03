@@ -7,6 +7,7 @@ Aplikasi gamifikasi untuk Pondok Pesantren Mahasiswa Al-Awwabin Sukarame – Ban
 ## 🚀 Fitur Utama
 
 ### 🔐 Autentikasi & Manajemen User
+
 - Login & Register via email/password
 - Google Sign-In integration
 - Role-based access control (admin & santri)
@@ -15,6 +16,7 @@ Aplikasi gamifikasi untuk Pondok Pesantren Mahasiswa Al-Awwabin Sukarame – Ban
 - Logout system dengan konfirmasi
 
 ### 📅 Jadwal Pengajian
+
 - Menampilkan daftar pengajian real-time dari Firestore
 - Filter berdasarkan minggu/bulan/tahun
 - Detail tema, pemateri, dan lokasi
@@ -22,12 +24,14 @@ Aplikasi gamifikasi untuk Pondok Pesantren Mahasiswa Al-Awwabin Sukarame – Ban
 - CRUD operations untuk admin
 
 ### 🎯 Jadwal Kegiatan
+
 - Daftar kegiatan pondok dengan timeline
 - Notifikasi pengingat sehari sebelumnya
 - Status kegiatan (hari ini/besok/selesai)
 - Manajemen kegiatan untuk admin
 
 ### 🏷️ **Presensi Otomatis RFID (IoT System)**
+
 - **Hardware**: ESP32 + MFRC522 RFID Reader
 - **Otomatis**: Tap kartu RFID untuk presensi
 - **Real-time**: Data langsung tersinkron ke Firestore
@@ -37,21 +41,37 @@ Aplikasi gamifikasi untuk Pondok Pesantren Mahasiswa Al-Awwabin Sukarame – Ban
 - **Poin System**: Otomatis memberikan poin berdasarkan kehadiran
 
 ### 🏆 Leaderboard Gamifikasi
+
 - Ranking berdasarkan poin akumulasi
 - Filter periode (mingguan/bulanan/tahunan)
 - Podium visual untuk top 3 santri
 - Badge dan medal achievement system
 - Progress tracking dan streak counter
+- **Level badges** untuk setiap santri di leaderboard
+
+### 📊 Level System
+
+- **10 Level Progresif**: Dari "Santri Pemula" hingga "Santri Legend"
+- **Badge Unik**: Setiap level memiliki emoji dan warna khas (🌱🌿🍃⭐🌟💎🏆👑🔥⚡)
+- **Progress Bar**: Visual progress menuju level berikutnya
+- **Point Thresholds**: 0-99, 100-249, 250-499, 500-799, 800-1199, 1200-1699, 1700-2299, 2300-2999, 3000-3999, 4000+
+- **Dashboard Integration**: Level badge dan progress di welcome card
+- **Profile Display**: Kartu level lengkap dengan informasi detail
+- **Leaderboard Badges**: Level badge overlay pada avatar user
 
 ### 📢 Sistem Pengumuman
+
 - Admin dapat membuat pengumuman multimedia
 - Push notification real-time
 - Marker prioritas untuk pengumuman penting
 - Rich text dan media attachment support
 
 ### 👤 Profil & Dashboard
+
 - Dashboard personal dengan statistik lengkap
+- **Level badge dan progress** di dashboard welcome card
 - Edit profil dengan foto upload
+- **Level progress card** dengan progress bar interaktif
 - Tracking poin dan achievement
 - Pengaturan notifikasi dan preferensi
 - Logout functionality di semua halaman
@@ -59,6 +79,7 @@ Aplikasi gamifikasi untuk Pondok Pesantren Mahasiswa Al-Awwabin Sukarame – Ban
 ## 🛠 Teknologi & Arsitektur
 
 ### Mobile App (Flutter)
+
 - **Framework**: Flutter 3+ dengan Material Design 3
 - **Language**: Dart 3+
 - **State Management**: Riverpod untuk reactive programming
@@ -66,6 +87,7 @@ Aplikasi gamifikasi untuk Pondok Pesantren Mahasiswa Al-Awwabin Sukarame – Ban
 - **UI Components**: Custom widgets dengan konsistensi design system
 
 ### Backend & Database
+
 - **Authentication**: Firebase Authentication
 - **Database**: Firebase Firestore (NoSQL)
 - **File Storage**: Firebase Storage untuk media files
@@ -73,12 +95,14 @@ Aplikasi gamifikasi untuk Pondok Pesantren Mahasiswa Al-Awwabin Sukarame – Ban
 - **Functions**: Firebase Cloud Functions untuk server-side logic
 
 ### IoT RFID System
+
 - **Hardware**: ESP32 microcontroller + MFRC522 RFID module
 - **Connectivity**: WiFi untuk komunikasi dengan Firebase
 - **Protocol**: HTTP REST API calls ke Firestore
 - **Cards**: RFID cards/tags untuk identifikasi santri
 
 ### Development Tools
+
 - **IDE**: VS Code / Android Studio
 - **Version Control**: Git
 - **Testing**: Flutter test framework
@@ -108,6 +132,7 @@ flutter pub get
 ### 3. Firebase Configuration
 
 #### 3.1 Firebase Project Setup
+
 1. Buat project di [Firebase Console](https://console.firebase.google.com/)
 2. Enable services:
    - Authentication (Email/Password, Google)
@@ -117,12 +142,14 @@ flutter pub get
    - Analytics
 
 #### 3.2 Android Configuration
+
 ```bash
 # Download google-services.json ke android/app/
 # Update android/app/build.gradle dengan Firebase plugins
 ```
 
 #### 3.3 iOS Configuration
+
 ```bash
 # Download GoogleService-Info.plist ke ios/Runner/
 # Update ios/Runner/Info.plist dengan URL schemes
@@ -131,6 +158,7 @@ flutter pub get
 ### 4. IoT RFID System Setup
 
 #### 4.1 Hardware Requirements
+
 - ESP32 Development Board
 - MFRC522 RFID Reader Module
 - RFID Cards/Tags untuk setiap santri
@@ -138,6 +166,7 @@ flutter pub get
 - Power supply 5V
 
 #### 4.2 Wiring Diagram
+
 ```
 ESP32    MFRC522
 -----    --------
@@ -151,6 +180,7 @@ D22   -> RST
 ```
 
 #### 4.3 Arduino Code Deployment
+
 ```cpp
 // Upload code dari file: iot/rfid_device_code.ino
 // Configure WiFi credentials dan Firebase URL
@@ -182,6 +212,7 @@ flutter build ios --release
 ## 📱 Panduan Penggunaan
 
 ### Untuk Santri (Mobile App)
+
 - **Dashboard**: Overview poin, kegiatan hari ini, ranking personal
 - **Presensi RFID**: Tap kartu di reader untuk presensi otomatis
 - **Jadwal**: Lihat jadwal pengajian dan kegiatan terkini
@@ -190,6 +221,7 @@ flutter build ios --release
 - **Pengumuman**: Baca pengumuman penting dari admin
 
 ### Untuk Admin (Mobile App + Web Dashboard)
+
 - **Dashboard**: Overview analytics dan statistik sistem
 - **Manajemen Santri**: CRUD data santri dan assignment RFID
 - **Jadwal**: Tambah/edit jadwal pengajian dan kegiatan
@@ -200,21 +232,47 @@ flutter build ios --release
 ## 🎮 Sistem Gamifikasi
 
 ### Point System
+
 ```yaml
 Presensi Hadir: +10 poin
-Presensi Izin: +5 poin  
+Presensi Izin: +5 poin
 Presensi Sakit: +5 poin
 Bonus Streak 7 hari: +20 poin
 Bonus Streak 30 hari: +100 poin
 ```
 
+### Level System (10 Levels)
+
+```yaml
+Level 1: Santri Pemula       (0-99 poin)      🌱 Light Green
+Level 2: Santri Rajin        (100-249 poin)   🌿 Green
+Level 3: Santri Tekun        (250-499 poin)   🍃 Teal
+Level 4: Santri Istiqomah    (500-799 poin)   ⭐ Cyan
+Level 5: Santri Berprestasi  (800-1199 poin)  🌟 Blue
+Level 6: Santri Teladan      (1200-1699 poin) 💎 Indigo
+Level 7: Santri Inspiratif   (1700-2299 poin) 🏆 Purple
+Level 8: Santri Juara        (2300-2999 poin) 👑 Orange
+Level 9: Santri Master       (3000-3999 poin) 🔥 Deep Orange
+Level 10: Santri Legend       (4000+ poin)     ⚡ Red
+```
+
+**Level Features:**
+
+- Visual progression dengan badge emoji unik
+- Progress bar menunjukkan kemajuan ke level berikutnya
+- Warna badge mengikuti difficulty level
+- Tampil di dashboard, profile, dan leaderboard
+- Level-up detection untuk notifikasi achievement
+
 ### Achievement Badges
+
 - 🥇 **Top Performer**: Ranking 1 bulanan
 - 🔥 **Streak Master**: 30 hari berturut-turut hadir
 - ⭐ **Consistent**: 90% kehadiran bulanan
 - 🎯 **Perfect Week**: 7 hari berturut-turut hadir
 
 ### Leaderboard Categories
+
 - **Weekly**: Reset setiap Senin
 - **Monthly**: Reset setiap tanggal 1
 - **Yearly**: Reset setiap 1 Januari
@@ -223,6 +281,7 @@ Bonus Streak 30 hari: +100 poin
 ## �️ Struktur Database Firestore
 
 ### 👥 users
+
 ```yaml
 /{userId}:
   # Profile Information
@@ -230,46 +289,48 @@ Bonus Streak 30 hari: +100 poin
   email: string
   nim: string
   fakultas: string
-  
+
   # Role & Status
-  role: string  # 'admin' | 'santri'
+  role: string # 'admin' | 'santri'
   statusAktif: boolean
   tanggalDaftar: timestamp
-  
+
   # Gamification
   poin: number
   totalKehadiran: number
   streakHarian: number
   maxStreak: number
-  
+
   # RFID Integration
-  rfidCardId: string  # ID kartu RFID santri
-  
+  rfidCardId: string # ID kartu RFID santri
+
   # Media
-  fotoProfil: string  # Firebase Storage URL
-  
+  fotoProfil: string # Firebase Storage URL
+
   # Settings
   notificationEnabled: boolean
-  language: string  # 'id' | 'en'
+  language: string # 'id' | 'en'
 ```
 
 ### 📅 jadwal_pengajian
+
 ```yaml
 /{jadwalId}:
   tanggal: timestamp
-  waktuMulai: string  # "08:00"
-  waktuSelesai: string  # "10:00"
+  waktuMulai: string # "08:00"
+  waktuSelesai: string # "10:00"
   tema: string
   pemateri: string
   lokasi: string
   deskripsi: string
   isActive: boolean
-  createdBy: string  # userId admin
+  createdBy: string # userId admin
   createdAt: timestamp
   updatedAt: timestamp
 ```
 
 ### 🎯 jadwal_kegiatan
+
 ```yaml
 /{kegiatanId}:
   namaKegiatan: string
@@ -278,7 +339,7 @@ Bonus Streak 30 hari: +100 poin
   waktuSelesai: string
   lokasi: string
   deskripsi: string
-  kategori: string  # 'umum' | 'khusus' | 'wajib'
+  kategori: string # 'umum' | 'khusus' | 'wajib'
   maxPeserta: number
   jumlahPeserta: number
   isActive: boolean
@@ -288,71 +349,74 @@ Bonus Streak 30 hari: +100 poin
 ```
 
 ### ✅ presensi (IoT RFID Data)
+
 ```yaml
 /{presensiId}:
   # User Info
   userId: string
   nama: string
-  
+
   # Timestamp
   tanggal: timestamp
   waktuPresensi: timestamp
-  
+
   # Status
-  status: string  # 'Hadir' | 'Izin' | 'Sakit' | 'Alpha'
-  statusColor: string  # hex color untuk UI
-  statusIcon: string  # icon name untuk UI
-  
+  status: string # 'Hadir' | 'Izin' | 'Sakit' | 'Alpha'
+  statusColor: string # hex color untuk UI
+  statusIcon: string # icon name untuk UI
+
   # RFID Metadata
   rfidCardId: string
-  deviceId: string  # ID perangkat RFID reader
-  deviceLocation: string  # lokasi perangkat
-  
+  deviceId: string # ID perangkat RFID reader
+  deviceLocation: string # lokasi perangkat
+
   # Gamification
   poinDiperoleh: number
   isBonus: boolean
-  bonusReason: string  # 'streak_weekly' | 'perfect_month'
-  
+  bonusReason: string # 'streak_weekly' | 'perfect_month'
+
   # Admin Override
-  isManualEntry: boolean  # false untuk RFID, true untuk manual
-  manualEntryBy: string  # userId admin (jika manual)
-  keterangan: string  # catatan tambahan
+  isManualEntry: boolean # false untuk RFID, true untuk manual
+  manualEntryBy: string # userId admin (jika manual)
+  keterangan: string # catatan tambahan
 ```
 
 ### 📢 pengumuman
+
 ```yaml
 /{pengumumanId}:
   judul: string
-  isi: string  # support markdown/rich text
+  isi: string # support markdown/rich text
   tanggal: timestamp
-  
+
   # Media
-  gambarUrl: string[]  # array of image URLs
-  attachmentUrl: string[]  # array of file URLs
-  
+  gambarUrl: string[] # array of image URLs
+  attachmentUrl: string[] # array of file URLs
+
   # Metadata
   isPenting: boolean
-  kategori: string  # 'umum' | 'akademik' | 'keuangan'
-  targetAudience: string[]  # ['all'] | ['santri'] | ['admin']
-  
+  kategori: string # 'umum' | 'akademik' | 'keuangan'
+  targetAudience: string[] # ['all'] | ['santri'] | ['admin']
+
   # Admin Info
   createdBy: string
   authorName: string
-  
+
   # Engagement
   viewCount: number
   likeCount: number
   commentCount: number
-  
+
   # Scheduling
-  publishAt: timestamp  # untuk scheduled posts
-  expireAt: timestamp   # auto-delete date
+  publishAt: timestamp # untuk scheduled posts
+  expireAt: timestamp # auto-delete date
   isActive: boolean
 ```
 
 ### 🏆 rankings (Aggregated Data)
+
 ```yaml
-/{period}/{userId}:  # period: 'weekly' | 'monthly' | 'yearly' | 'alltime'
+/{period}/{userId}: # period: 'weekly' | 'monthly' | 'yearly' | 'alltime'
   nama: string
   poin: number
   totalKehadiran: number
@@ -363,6 +427,7 @@ Bonus Streak 30 hari: +100 poin
 ```
 
 ### 🔧 system_config (IoT & App Settings)
+
 ```yaml
 /app_settings:
   version: string
@@ -392,6 +457,7 @@ Bonus Streak 30 hari: +100 poin
 Untuk membuat web dashboard admin yang terintegrasi dengan sistem SiSantri, berikut adalah panduan komprehensif:
 
 #### � Dashboard Overview Components
+
 ```javascript
 // Dashboard Stats Cards
 const dashboardStats = {
@@ -400,161 +466,168 @@ const dashboardStats = {
   persentaseKehadiran: 94.7,
   totalPoin: 125400,
   deviceOnline: 5,
-  deviceOffline: 1
-}
+  deviceOffline: 1,
+};
 
 // Chart Data Structure
 const attendanceChart = {
-  labels: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'],
-  datasets: [{
-    label: 'Kehadiran',
-    data: [145, 142, 138, 147, 150, 89, 92],
-    backgroundColor: '#4CAF50'
-  }]
-}
+  labels: ["Sen", "Sel", "Rab", "Kam", "Jum", "Sab", "Min"],
+  datasets: [
+    {
+      label: "Kehadiran",
+      data: [145, 142, 138, 147, 150, 89, 92],
+      backgroundColor: "#4CAF50",
+    },
+  ],
+};
 ```
 
 #### 🔌 Real-time Data Integration
+
 ```javascript
 // Firebase Real-time Listener untuk Web
-import { onSnapshot, collection, query, where } from 'firebase/firestore'
+import { onSnapshot, collection, query, where } from "firebase/firestore";
 
 // Listen to real-time presensi updates
 const listenToPresensi = () => {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
-  
-  const q = query(
-    collection(db, 'presensi'),
-    where('tanggal', '>=', today)
-  )
-  
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const q = query(collection(db, "presensi"), where("tanggal", ">=", today));
+
   return onSnapshot(q, (snapshot) => {
-    const todayPresensi = []
-    snapshot.forEach(doc => {
-      todayPresensi.push({ id: doc.id, ...doc.data() })
-    })
-    updateDashboardStats(todayPresensi)
-  })
-}
+    const todayPresensi = [];
+    snapshot.forEach((doc) => {
+      todayPresensi.push({ id: doc.id, ...doc.data() });
+    });
+    updateDashboardStats(todayPresensi);
+  });
+};
 
 // RFID Device Status Monitoring
 const monitorDevices = () => {
-  const devicesRef = collection(db, 'system_config/rfid_devices')
+  const devicesRef = collection(db, "system_config/rfid_devices");
   return onSnapshot(devicesRef, (snapshot) => {
-    const devices = []
-    snapshot.forEach(doc => {
-      const device = { id: doc.id, ...doc.data() }
-      device.isOnline = (Date.now() - device.lastHeartbeat.toMillis()) < 300000 // 5 minutes
-      devices.push(device)
-    })
-    updateDeviceStatus(devices)
-  })
-}
+    const devices = [];
+    snapshot.forEach((doc) => {
+      const device = { id: doc.id, ...doc.data() };
+      device.isOnline = Date.now() - device.lastHeartbeat.toMillis() < 300000; // 5 minutes
+      devices.push(device);
+    });
+    updateDeviceStatus(devices);
+  });
+};
 ```
 
 #### 📋 Santri Management CRUD
+
 ```javascript
 // Create Santri dengan RFID Assignment
 const createSantri = async (santriData) => {
   try {
-    const docRef = await addDoc(collection(db, 'users'), {
+    const docRef = await addDoc(collection(db, "users"), {
       ...santriData,
-      role: 'santri',
+      role: "santri",
       statusAktif: true,
       tanggalDaftar: new Date(),
       poin: 0,
       totalKehadiran: 0,
       streakHarian: 0,
       rfidCardId: santriData.rfidCardId, // Assign RFID card
-      createdAt: new Date()
-    })
-    
+      createdAt: new Date(),
+    });
+
     // Send welcome notification
     await sendNotification(docRef.id, {
-      title: 'Selamat Datang di SiSantri',
-      body: `Akun Anda telah dibuat. RFID Card ID: ${santriData.rfidCardId}`
-    })
-    
-    return docRef.id
+      title: "Selamat Datang di SiSantri",
+      body: `Akun Anda telah dibuat. RFID Card ID: ${santriData.rfidCardId}`,
+    });
+
+    return docRef.id;
   } catch (error) {
-    console.error('Error creating santri:', error)
-    throw error
+    console.error("Error creating santri:", error);
+    throw error;
   }
-}
+};
 
 // Update Santri dengan RFID Re-assignment
 const updateSantri = async (userId, updateData) => {
-  const userRef = doc(db, 'users', userId)
+  const userRef = doc(db, "users", userId);
   await updateDoc(userRef, {
     ...updateData,
-    updatedAt: new Date()
-  })
-  
+    updatedAt: new Date(),
+  });
+
   // If RFID changed, update related presensi records
   if (updateData.rfidCardId) {
-    await updateRFIDAssignment(userId, updateData.rfidCardId)
+    await updateRFIDAssignment(userId, updateData.rfidCardId);
   }
-}
+};
 ```
 
 #### 📊 Analytics & Reporting
+
 ```javascript
 // Generate Attendance Report
-const generateAttendanceReport = async (startDate, endDate, format = 'weekly') => {
+const generateAttendanceReport = async (
+  startDate,
+  endDate,
+  format = "weekly"
+) => {
   const presensiQuery = query(
-    collection(db, 'presensi'),
-    where('tanggal', '>=', startDate),
-    where('tanggal', '<=', endDate),
-    orderBy('tanggal', 'desc')
-  )
-  
-  const snapshot = await getDocs(presensiQuery)
-  const data = []
-  
-  snapshot.forEach(doc => {
-    data.push({ id: doc.id, ...doc.data() })
-  })
-  
+    collection(db, "presensi"),
+    where("tanggal", ">=", startDate),
+    where("tanggal", "<=", endDate),
+    orderBy("tanggal", "desc")
+  );
+
+  const snapshot = await getDocs(presensiQuery);
+  const data = [];
+
+  snapshot.forEach((doc) => {
+    data.push({ id: doc.id, ...doc.data() });
+  });
+
   // Process data berdasarkan format
   switch (format) {
-    case 'weekly':
-      return processWeeklyData(data)
-    case 'monthly':
-      return processMonthlyData(data)
-    case 'detailed':
-      return processDetailedData(data)
+    case "weekly":
+      return processWeeklyData(data);
+    case "monthly":
+      return processMonthlyData(data);
+    case "detailed":
+      return processDetailedData(data);
     default:
-      return data
+      return data;
   }
-}
+};
 
 // Ranking Analytics
-const calculateRankings = async (period = 'monthly') => {
+const calculateRankings = async (period = "monthly") => {
   const usersSnapshot = await getDocs(
-    query(collection(db, 'users'), where('role', '==', 'santri'))
-  )
-  
-  const rankings = []
-  
+    query(collection(db, "users"), where("role", "==", "santri"))
+  );
+
+  const rankings = [];
+
   for (const userDoc of usersSnapshot.docs) {
-    const userData = userDoc.data()
-    const presensiData = await getUserPresensiData(userDoc.id, period)
-    
+    const userData = userDoc.data();
+    const presensiData = await getUserPresensiData(userDoc.id, period);
+
     rankings.push({
       userId: userDoc.id,
       nama: userData.nama,
       poin: calculatePeriodPoin(presensiData),
       kehadiran: presensiData.length,
-      persentase: calculatePersentase(presensiData, period)
-    })
+      persentase: calculatePersentase(presensiData, period),
+    });
   }
-  
-  return rankings.sort((a, b) => b.poin - a.poin)
-}
+
+  return rankings.sort((a, b) => b.poin - a.poin);
+};
 ```
 
 #### 🔧 IoT Device Management
+
 ```javascript
 // Device Configuration Panel
 const deviceConfig = {
@@ -562,58 +635,60 @@ const deviceConfig = {
   scanInterval: 1000, // ms
   retryAttempts: 3,
   timeoutDuration: 5000,
-  
+
   // Network Settings
-  wifiSSID: 'PesantrenWiFi',
-  firebaseUrl: 'https://sisantri-project.firebaseio.com',
-  apiEndpoint: '/api/presensi',
-  
+  wifiSSID: "PesantrenWiFi",
+  firebaseUrl: "https://sisantri-project.firebaseio.com",
+  apiEndpoint: "/api/presensi",
+
   // Hardware Settings
   buzzerEnabled: true,
   ledIndicator: true,
-  displayTimeout: 5000
-}
+  displayTimeout: 5000,
+};
 
 // Send Configuration to Device
 const updateDeviceConfig = async (deviceId, config) => {
   try {
     // Update in Firestore
-    await updateDoc(doc(db, 'system_config/rfid_devices', deviceId), {
+    await updateDoc(doc(db, "system_config/rfid_devices", deviceId), {
       config: config,
-      lastConfigUpdate: new Date()
-    })
-    
+      lastConfigUpdate: new Date(),
+    });
+
     // Send MQTT command to device (if using MQTT)
-    await sendMQTTCommand(deviceId, 'config_update', config)
-    
-    return { success: true }
+    await sendMQTTCommand(deviceId, "config_update", config);
+
+    return { success: true };
   } catch (error) {
-    console.error('Device config update failed:', error)
-    throw error
+    console.error("Device config update failed:", error);
+    throw error;
   }
-}
+};
 
 // Device Health Monitoring
 const checkDeviceHealth = async () => {
-  const devicesSnapshot = await getDocs(collection(db, 'system_config/rfid_devices'))
-  const healthReport = []
-  
-  devicesSnapshot.forEach(doc => {
-    const device = { id: doc.id, ...doc.data() }
-    const lastSeen = Date.now() - device.lastHeartbeat.toMillis()
-    
+  const devicesSnapshot = await getDocs(
+    collection(db, "system_config/rfid_devices")
+  );
+  const healthReport = [];
+
+  devicesSnapshot.forEach((doc) => {
+    const device = { id: doc.id, ...doc.data() };
+    const lastSeen = Date.now() - device.lastHeartbeat.toMillis();
+
     healthReport.push({
       deviceId: device.id,
-      status: lastSeen < 300000 ? 'online' : 'offline', // 5 minutes threshold
+      status: lastSeen < 300000 ? "online" : "offline", // 5 minutes threshold
       lastSeen: lastSeen,
       location: device.location,
       totalScans: device.totalScans || 0,
-      uptime: calculateUptime(device.firstHeartbeat, device.lastHeartbeat)
-    })
-  })
-  
-  return healthReport
-}
+      uptime: calculateUptime(device.firstHeartbeat, device.lastHeartbeat),
+    });
+  });
+
+  return healthReport;
+};
 ```
 
 #### 🎨 UI Components untuk Web Dashboard
@@ -624,7 +699,7 @@ const checkDeviceHealth = async () => {
   <!-- Sidebar Navigation -->
   <nav class="sidebar">
     <div class="logo">
-      <img src="sisantri-logo.png" alt="SiSantri">
+      <img src="sisantri-logo.png" alt="SiSantri" />
     </div>
     <ul class="nav-menu">
       <li><a href="#dashboard" class="active">📊 Dashboard</a></li>
@@ -637,20 +712,23 @@ const checkDeviceHealth = async () => {
       <li><a href="#reports">📊 Laporan</a></li>
     </ul>
   </nav>
-  
+
   <!-- Main Content -->
   <main class="main-content">
     <!-- Top Bar -->
     <header class="top-bar">
       <div class="search-bar">
-        <input type="text" placeholder="Cari santri, presensi, atau pengumuman...">
+        <input
+          type="text"
+          placeholder="Cari santri, presensi, atau pengumuman..."
+        />
       </div>
       <div class="user-menu">
         <span class="notification-bell">🔔</span>
         <div class="user-avatar">Admin</div>
       </div>
     </header>
-    
+
     <!-- Dashboard Content -->
     <div class="dashboard-content">
       <!-- Stats Cards -->
@@ -662,7 +740,7 @@ const checkDeviceHealth = async () => {
             <p>Total Santri</p>
           </div>
         </div>
-        
+
         <div class="stat-card">
           <div class="stat-icon">✅</div>
           <div class="stat-info">
@@ -670,7 +748,7 @@ const checkDeviceHealth = async () => {
             <p>Hadir Hari Ini</p>
           </div>
         </div>
-        
+
         <div class="stat-card">
           <div class="stat-icon">📊</div>
           <div class="stat-info">
@@ -678,7 +756,7 @@ const checkDeviceHealth = async () => {
             <p>Persentase Kehadiran</p>
           </div>
         </div>
-        
+
         <div class="stat-card">
           <div class="stat-icon">🔧</div>
           <div class="stat-info">
@@ -687,27 +765,29 @@ const checkDeviceHealth = async () => {
           </div>
         </div>
       </div>
-      
+
       <!-- Charts Section -->
       <div class="charts-section">
         <div class="chart-container">
           <h3>Kehadiran Mingguan</h3>
           <canvas id="attendanceChart"></canvas>
         </div>
-        
+
         <div class="chart-container">
           <h3>Top 10 Santri</h3>
           <div id="topSantriList"></div>
         </div>
       </div>
-      
+
       <!-- Recent Activity -->
       <div class="recent-activity">
         <h3>Aktivitas Terbaru</h3>
         <div class="activity-list">
           <div class="activity-item">
             <span class="activity-time">08:15</span>
-            <span class="activity-desc">Ahmad Fauzi melakukan presensi (RFID: A1B2C3)</span>
+            <span class="activity-desc"
+              >Ahmad Fauzi melakukan presensi (RFID: A1B2C3)</span
+            >
             <span class="activity-status success">Hadir</span>
           </div>
           <div class="activity-item">
@@ -723,6 +803,7 @@ const checkDeviceHealth = async () => {
 ```
 
 #### 🎨 CSS Styling untuk Dashboard
+
 ```css
 /* Dashboard Styling */
 .dashboard-container {
@@ -786,7 +867,7 @@ const checkDeviceHealth = async () => {
   background: white;
   padding: 25px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   display: flex;
   align-items: center;
 }
@@ -807,7 +888,7 @@ const checkDeviceHealth = async () => {
   background: white;
   padding: 25px;
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Responsive Design */
@@ -815,7 +896,7 @@ const checkDeviceHealth = async () => {
   .dashboard-container {
     grid-template-columns: 1fr;
   }
-  
+
   .sidebar {
     position: fixed;
     top: 0;
@@ -825,7 +906,7 @@ const checkDeviceHealth = async () => {
     transition: left 0.3s;
     z-index: 1000;
   }
-  
+
   .sidebar.active {
     left: 0;
   }
@@ -833,95 +914,99 @@ const checkDeviceHealth = async () => {
 ```
 
 #### 📡 API Endpoints untuk Integration
+
 ```javascript
 // REST API Structure untuk Web Dashboard
 const apiEndpoints = {
   // Authentication
   auth: {
-    login: 'POST /api/auth/login',
-    logout: 'POST /api/auth/logout',
-    refresh: 'POST /api/auth/refresh'
+    login: "POST /api/auth/login",
+    logout: "POST /api/auth/logout",
+    refresh: "POST /api/auth/refresh",
   },
-  
+
   // Santri Management
   santri: {
-    getAll: 'GET /api/santri',
-    getById: 'GET /api/santri/:id',
-    create: 'POST /api/santri',
-    update: 'PUT /api/santri/:id',
-    delete: 'DELETE /api/santri/:id',
-    assignRFID: 'POST /api/santri/:id/rfid'
+    getAll: "GET /api/santri",
+    getById: "GET /api/santri/:id",
+    create: "POST /api/santri",
+    update: "PUT /api/santri/:id",
+    delete: "DELETE /api/santri/:id",
+    assignRFID: "POST /api/santri/:id/rfid",
   },
-  
+
   // Presensi Data
   presensi: {
-    getToday: 'GET /api/presensi/today',
-    getByDate: 'GET /api/presensi/:date',
-    getByUser: 'GET /api/presensi/user/:userId',
-    manualEntry: 'POST /api/presensi/manual',
-    export: 'GET /api/presensi/export'
+    getToday: "GET /api/presensi/today",
+    getByDate: "GET /api/presensi/:date",
+    getByUser: "GET /api/presensi/user/:userId",
+    manualEntry: "POST /api/presensi/manual",
+    export: "GET /api/presensi/export",
   },
-  
+
   // IoT Devices
   devices: {
-    getAll: 'GET /api/devices',
-    getStatus: 'GET /api/devices/status',
-    updateConfig: 'PUT /api/devices/:id/config',
-    restart: 'POST /api/devices/:id/restart',
-    logs: 'GET /api/devices/:id/logs'
+    getAll: "GET /api/devices",
+    getStatus: "GET /api/devices/status",
+    updateConfig: "PUT /api/devices/:id/config",
+    restart: "POST /api/devices/:id/restart",
+    logs: "GET /api/devices/:id/logs",
   },
-  
+
   // Analytics
   analytics: {
-    dashboard: 'GET /api/analytics/dashboard',
-    attendance: 'GET /api/analytics/attendance',
-    rankings: 'GET /api/analytics/rankings',
-    trends: 'GET /api/analytics/trends'
-  }
-}
+    dashboard: "GET /api/analytics/dashboard",
+    attendance: "GET /api/analytics/attendance",
+    rankings: "GET /api/analytics/rankings",
+    trends: "GET /api/analytics/trends",
+  },
+};
 ```
 
 #### 🔒 Security Implementation
+
 ```javascript
 // Role-based Access Control
 const checkPermission = (userRole, requiredPermission) => {
   const permissions = {
-    admin: ['read', 'write', 'delete', 'manage_devices', 'view_analytics'],
-    santri: ['read_own', 'write_own']
-  }
-  
-  return permissions[userRole]?.includes(requiredPermission) || false
-}
+    admin: ["read", "write", "delete", "manage_devices", "view_analytics"],
+    santri: ["read_own", "write_own"],
+  };
+
+  return permissions[userRole]?.includes(requiredPermission) || false;
+};
 
 // API Authentication Middleware
 const authenticateAdmin = async (req, res, next) => {
   try {
-    const token = req.headers.authorization?.split(' ')[1]
-    const decodedToken = await admin.auth().verifyIdToken(token)
-    
-    if (decodedToken.role !== 'admin') {
-      return res.status(403).json({ error: 'Admin access required' })
+    const token = req.headers.authorization?.split(" ")[1];
+    const decodedToken = await admin.auth().verifyIdToken(token);
+
+    if (decodedToken.role !== "admin") {
+      return res.status(403).json({ error: "Admin access required" });
     }
-    
-    req.user = decodedToken
-    next()
+
+    req.user = decodedToken;
+    next();
   } catch (error) {
-    res.status(401).json({ error: 'Unauthorized' })
+    res.status(401).json({ error: "Unauthorized" });
   }
-}
+};
 ```
 
 ### � Deployment Recommendations
 
 #### Frontend (Web Dashboard)
+
 - **Framework**: React.js / Vue.js / Next.js
-- **State Management**: Redux / Zustand / Pinia  
+- **State Management**: Redux / Zustand / Pinia
 - **Charts**: Chart.js / Recharts / D3.js
 - **UI Library**: Material-UI / Ant Design / Chakra UI
 - **Build Tool**: Vite / Webpack
 - **Hosting**: Vercel / Netlify / Firebase Hosting
 
 #### Backend API (Optional)
+
 - **Runtime**: Node.js / Python Flask / Go
 - **Framework**: Express.js / FastAPI / Gin
 - **Database**: Firebase Firestore (primary) + PostgreSQL (analytics)
@@ -929,6 +1014,7 @@ const authenticateAdmin = async (req, res, next) => {
 - **Hosting**: Google Cloud Run / AWS Lambda / Railway
 
 #### Real-time Features
+
 - **WebSocket**: Socket.io untuk real-time updates
 - **Server-Sent Events**: Untuk live dashboard updates
 - **Firebase Realtime**: Direct integration untuk device status
@@ -936,12 +1022,14 @@ const authenticateAdmin = async (req, res, next) => {
 ## 📚 Learning Resources & References
 
 ### 📖 Documentation Links
+
 - [Flutter Documentation](https://docs.flutter.dev/) - Official Flutter docs
 - [Firebase Documentation](https://firebase.google.com/docs) - Firebase integration guide
 - [Riverpod Documentation](https://riverpod.dev/) - State management best practices
 - [Material Design 3](https://m3.material.io/) - UI design system guidelines
 
 ### 🎓 Tutorial Series untuk Web Dashboard
+
 1. **Firebase Integration**: [Web SDK Setup](https://firebase.google.com/docs/web/setup)
 2. **Real-time Database**: [Firestore Web Guide](https://firebase.google.com/docs/firestore/quickstart)
 3. **Authentication**: [Firebase Auth Web](https://firebase.google.com/docs/auth/web/start)
@@ -949,6 +1037,7 @@ const authenticateAdmin = async (req, res, next) => {
 5. **Responsive Design**: [CSS Grid & Flexbox](https://css-tricks.com/snippets/css/complete-guide-grid/)
 
 ### 🔧 Development Tools
+
 - **Code Editor**: VS Code dengan extensions Flutter, Firebase
 - **API Testing**: Postman / Insomnia untuk endpoint testing
 - **Database Viewer**: Firebase Console / Firestore extension
@@ -956,6 +1045,7 @@ const authenticateAdmin = async (req, res, next) => {
 - **Design Tool**: Figma untuk UI mockups
 
 ### 🎯 Project Structure untuk Web Dashboard
+
 ```
 sisantri-dashboard/
 ├── src/
@@ -992,6 +1082,7 @@ sisantri-dashboard/
 ## 🚀 Quick Start untuk Web Dashboard
 
 ### 1. Setup Project Baru
+
 ```bash
 # Create React app
 npx create-react-app sisantri-dashboard
@@ -1004,11 +1095,12 @@ npm install react-router-dom axios
 ```
 
 ### 2. Firebase Configuration
+
 ```javascript
 // src/services/firebase.js
-import { initializeApp } from 'firebase/app'
-import { getFirestore } from 'firebase/firestore'
-import { getAuth } from 'firebase/auth'
+import { initializeApp } from "firebase/app";
+import { getFirestore } from "firebase/firestore";
+import { getAuth } from "firebase/auth";
 
 const firebaseConfig = {
   // Copy from Firebase Console
@@ -1017,48 +1109,66 @@ const firebaseConfig = {
   projectId: "your-project-id",
   storageBucket: "your-project.appspot.com",
   messagingSenderId: "123456789",
-  appId: "your-app-id"
-}
+  appId: "your-app-id",
+};
 
-const app = initializeApp(firebaseConfig)
-export const db = getFirestore(app)
-export const auth = getAuth(app)
-export default app
+const app = initializeApp(firebaseConfig);
+export const db = getFirestore(app);
+export const auth = getAuth(app);
+export default app;
 ```
 
 ### 3. Basic Dashboard Component
+
 ```jsx
 // src/pages/Dashboard.jsx
-import React, { useState, useEffect } from 'react'
-import { collection, onSnapshot, query, where } from 'firebase/firestore'
-import { db } from '../services/firebase'
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js'
-import { Bar } from 'react-chartjs-2'
+import React, { useState, useEffect } from "react";
+import { collection, onSnapshot, query, where } from "firebase/firestore";
+import { db } from "../services/firebase";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+import { Bar } from "react-chartjs-2";
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 function Dashboard() {
   const [stats, setStats] = useState({
     totalSantri: 0,
     hadirHariIni: 0,
     persentaseKehadiran: 0,
-    deviceOnline: 0
-  })
+    deviceOnline: 0,
+  });
 
   useEffect(() => {
     // Listen to real-time data
-    const unsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
-      const santri = snapshot.docs.filter(doc => doc.data().role === 'santri')
-      setStats(prev => ({ ...prev, totalSantri: santri.length }))
-    })
+    const unsubscribe = onSnapshot(collection(db, "users"), (snapshot) => {
+      const santri = snapshot.docs.filter(
+        (doc) => doc.data().role === "santri"
+      );
+      setStats((prev) => ({ ...prev, totalSantri: santri.length }));
+    });
 
-    return () => unsubscribe()
-  }, [])
+    return () => unsubscribe();
+  }, []);
 
   return (
     <div className="dashboard">
       <h1>Dashboard SiSantri</h1>
-      
+
       <div className="stats-grid">
         <div className="stat-card">
           <h3>{stats.totalSantri}</h3>
@@ -1077,38 +1187,44 @@ function Dashboard() {
           <p>Device Online</p>
         </div>
       </div>
-      
+
       {/* Add charts and other components here */}
     </div>
-  )
+  );
 }
 
-export default Dashboard
+export default Dashboard;
 ```
 
 ## 📞 Support & Community
 
 ### 🔗 Useful Links
+
 - **GitHub Repository**: [sisantri-mobile](https://github.com/username/sisantri)
 - **Firebase Console**: [Your Firebase Project](https://console.firebase.google.com/)
 - **Flutter Community**: [Flutter Discord](https://discord.gg/N7Yshp4)
 - **Firebase Community**: [Firebase Slack](https://firebase.community/)
 
 ### 📧 Contact Information
+
 - **Developer**: sisantri.dev@gmail.com
 - **Technical Support**: tech@sisantri.com
 - **WhatsApp Support**: +62-812-3456-7890
 - **Documentation Issues**: docs@sisantri.com
 
 ### 🐛 Bug Reporting
+
 Untuk melaporkan bug atau request fitur:
+
 1. Buka issue di GitHub repository
 2. Gunakan template yang disediakan
 3. Sertakan screenshot dan log error
 4. Jelaskan steps to reproduce
 
 ### 🤝 Contributing
+
 Kontribusi sangat diterima! Silakan:
+
 1. Fork repository
 2. Buat feature branch
 3. Commit dengan conventional commits

@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sisantri/core/theme/app_theme.dart';
 import 'package:sisantri/shared/services/auth_service.dart';
-import 'package:sisantri/shared/services/firestore_service.dart';
 import 'package:sisantri/shared/services/presensi_aggregate_service.dart';
 import 'package:sisantri/shared/models/user_model.dart';
 import 'package:sisantri/shared/widgets/logout_button.dart';
+import 'package:sisantri/shared/widgets/level_progress_card.dart';
 import 'package:sisantri/features/santri/profile/presentation/pages/edit_profile_page.dart';
 import 'package:sisantri/features/santri/profile/presentation/pages/security_settings_page.dart';
 
@@ -74,6 +74,29 @@ class ProfilePage extends ConsumerWidget {
                   _buildProfileHeader(user),
 
                   const SizedBox(height: 24),
+
+                  // Level Progress (Only for Santri)
+                  if (user.isSantri) ...[
+                    Consumer(
+                      builder: (context, ref, child) {
+                        final totalPointsAsync = ref.watch(
+                          userTotalPointsProvider(user.id),
+                        );
+                        return totalPointsAsync.when(
+                          loading: () => const Card(
+                            child: Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Center(child: CircularProgressIndicator()),
+                            ),
+                          ),
+                          error: (_, __) => const SizedBox.shrink(),
+                          data: (totalPoints) =>
+                              LevelProgressCard(totalPoin: totalPoints),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                  ],
 
                   // Stats Cards
                   _buildStatsCards(user, ref),

@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 import 'package:sisantri/core/theme/app_theme.dart';
 import 'package:sisantri/shared/models/user_model.dart';
-import 'package:sisantri/shared/services/firestore_service.dart';
+import 'package:sisantri/shared/models/level_model.dart';
 import 'package:sisantri/shared/services/presensi_aggregate_service.dart';
+import 'package:sisantri/shared/widgets/level_badge_widget.dart';
 
 class DashboardWelcomeCard extends StatelessWidget {
   final UserModel? user;
@@ -74,52 +75,137 @@ class DashboardWelcomeCard extends StatelessWidget {
                   ],
                 ),
               ),
+              FutureBuilder<int>(
+                future: user != null
+                    ? PresensiAggregateService.getAggregate(
+                        userId: user!.id,
+                        periode: 'yearly',
+                        date: DateTime.now(),
+                      ).then((agg) => agg?.totalPoin ?? 0)
+                    : Future.value(0),
+                builder: (context, snapshot) {
+                  final poin = snapshot.data ?? 0;
+                  print(
+                    '🎯 Dashboard Level Badge - Poin: $poin, HasData: ${snapshot.hasData}, ConnectionState: ${snapshot.connectionState}',
+                  );
+                  return LevelBadgeWidget(
+                    totalPoin: poin,
+                    size: 50,
+                    showTitle: true,
+                  );
+                },
+              ),
             ],
           ),
           const SizedBox(height: 20),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor.withAlpha(15),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: AppTheme.primaryColor.withAlpha(50),
-                width: 1,
-              ),
-            ),
-            child: FutureBuilder<int>(
-              future: user != null
-                  ? PresensiAggregateService.getAggregate(
-                      userId: user!.id,
-                      periode: 'yearly',
-                      date: DateTime.now(),
-                    ).then((agg) => agg?.totalPoin ?? 0)
-                  : Future.value(0),
-              builder: (context, snapshot) {
-                final poin = snapshot.data ?? 0;
-                return Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.star_rounded,
-                      color: AppTheme.primaryColor,
-                      size: 18,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      snapshot.connectionState == ConnectionState.waiting
-                          ? '... Poin'
-                          : '$poin Poin',
-                      style: const TextStyle(
-                        color: AppTheme.primaryColor,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
+          FutureBuilder<int>(
+            future: user != null
+                ? PresensiAggregateService.getAggregate(
+                    userId: user!.id,
+                    periode: 'yearly',
+                    date: DateTime.now(),
+                  ).then((agg) => agg?.totalPoin ?? 0)
+                : Future.value(0),
+            builder: (context, snapshot) {
+              final poin = snapshot.data ?? 0;
+              final level = LevelModel.fromPoin(poin);
+              final progress = level.getProgressToNextLevel(poin);
+              final poinToNext = level.getPoinToNextLevel(poin);
+              final color = Color(
+                int.parse(level.color.replaceFirst('#', '0xFF')),
+              );
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              level.title,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF2E2E2E),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            if (!level.isMaxLevel())
+                              Text(
+                                '$poinToNext poin lagi ke level berikutnya',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              )
+                            else
+                              const Text(
+                                'Level Maksimal! 🎉',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.amber,
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryColor.withAlpha(15),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppTheme.primaryColor.withAlpha(50),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.star_rounded,
+                              color: AppTheme.primaryColor,
+                              size: 16,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              snapshot.connectionState ==
+                                      ConnectionState.waiting
+                                  ? '...'
+                                  : '$poin',
+                              style: const TextStyle(
+                                color: AppTheme.primaryColor,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (!level.isMaxLevel()) ...[
+                    const SizedBox(height: 12),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: LinearProgressIndicator(
+                        value: progress,
+                        backgroundColor: color.withOpacity(0.2),
+                        valueColor: AlwaysStoppedAnimation<Color>(color),
+                        minHeight: 6,
                       ),
                     ),
                   ],
-                );
-              },
-            ),
+                ],
+              );
+            },
           ),
         ],
       ),

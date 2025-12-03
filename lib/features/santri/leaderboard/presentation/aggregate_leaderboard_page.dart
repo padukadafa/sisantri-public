@@ -5,6 +5,8 @@ import 'package:sisantri/shared/models/presensi_aggregate_model.dart';
 import 'package:sisantri/shared/services/presensi_aggregate_service.dart';
 import 'package:sisantri/shared/models/user_model.dart';
 import 'package:sisantri/shared/services/auth_service.dart';
+import 'package:sisantri/shared/models/level_model.dart';
+import 'package:sisantri/shared/widgets/level_badge_widget.dart';
 
 /// Provider untuk periode filter leaderboard
 final leaderboardPeriodeProvider = StateProvider<String>((ref) => 'monthly');
@@ -303,6 +305,14 @@ class AggregateLeaderboardPage extends ConsumerWidget {
               ),
             ),
             Positioned(
+              bottom: -4,
+              child: LevelBadgeWidget(
+                totalPoin: poin,
+                size: 22,
+                showTitle: false,
+              ),
+            ),
+            Positioned(
               top: -8,
               right: -8,
               child: Container(
@@ -398,6 +408,7 @@ class AggregateLeaderboardPage extends ConsumerWidget {
   ) {
     final user = data['user'] as UserModel;
     final poin = data['totalPoin'] as int;
+    final level = LevelModel.fromPoin(poin);
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
@@ -407,22 +418,64 @@ class AggregateLeaderboardPage extends ConsumerWidget {
         border: Border.all(color: Colors.grey.shade200),
       ),
       child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: _getRankColor(rank),
-          child: Text(
-            '$rank',
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.bold,
+        leading: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            CircleAvatar(
+              radius: 24,
+              backgroundImage: user.fotoProfil != null
+                  ? NetworkImage(user.fotoProfil!)
+                  : null,
+              child: user.fotoProfil == null
+                  ? const Icon(Icons.person)
+                  : null,
             ),
-          ),
+            Positioned(
+              bottom: -4,
+              right: -4,
+              child: LevelBadgeWidget(
+                totalPoin: poin,
+                size: 18,
+                showTitle: false,
+              ),
+            ),
+          ],
         ),
         title: Row(
           children: [
-            Expanded(
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: _getRankColor(rank),
+                borderRadius: BorderRadius.circular(4),
+              ),
               child: Text(
-                user.nama,
-                style: const TextStyle(fontWeight: FontWeight.bold),
+                '#$rank',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 12,
+                ),
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    user.nama,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  Text(
+                    level.title,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: Color(int.parse(level.color.replaceFirst('#', '0xFF'))),
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
             Container(
