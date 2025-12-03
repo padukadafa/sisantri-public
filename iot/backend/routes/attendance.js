@@ -135,7 +135,4 @@ router.post(
     }
   }
 );
-router.get("/test", async (req, res, next) => {
-  
-});
 module.exports = router;
