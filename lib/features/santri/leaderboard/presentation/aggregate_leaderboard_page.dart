@@ -426,9 +426,7 @@ class AggregateLeaderboardPage extends ConsumerWidget {
               backgroundImage: user.fotoProfil != null
                   ? NetworkImage(user.fotoProfil!)
                   : null,
-              child: user.fotoProfil == null
-                  ? const Icon(Icons.person)
-                  : null,
+              child: user.fotoProfil == null ? const Icon(Icons.person) : null,
             ),
             Positioned(
               bottom: -4,
@@ -471,7 +469,9 @@ class AggregateLeaderboardPage extends ConsumerWidget {
                     level.title,
                     style: TextStyle(
                       fontSize: 11,
-                      color: Color(int.parse(level.color.replaceFirst('#', '0xFF'))),
+                      color: Color(
+                        int.parse(level.color.replaceFirst('#', '0xFF')),
+                      ),
                       fontWeight: FontWeight.w600,
                     ),
                   ),
