@@ -36,7 +36,7 @@ class NfcService {
 
       String? cardId;
 
-      await NfcManager.instance.startSession(
+   await NfcManager.instance.startSession(
         pollingOptions: {NfcPollingOption.iso14443, NfcPollingOption.iso15693},
         onDiscovered: (NfcTag tag) async {
           try {
@@ -48,7 +48,7 @@ class NfcService {
           } finally {
             await NfcManager.instance.stopSession();
           }
-        },
+        },   
       );
 
       return cardId;
