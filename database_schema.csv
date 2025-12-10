@@ -1,0 +1,199 @@
+Table,Field,Type,Description,Constraints
+users,id,string,Document ID (auto),PRIMARY KEY
+users,nama,string,Nama lengkap pengguna,REQUIRED
+users,email,string,Email pengguna,REQUIRED | UNIQUE
+users,nim,string,NIM santri,OPTIONAL
+users,fakultas,string,Fakultas santri,OPTIONAL
+users,role,string,Role pengguna,"REQUIRED | DEFAULT: 'santri' | VALUES: admin, dewan_guru, santri"
+users,statusAktif,boolean,Status aktif pengguna,REQUIRED | DEFAULT: true
+users,poin,number,Total poin yang dikumpulkan,REQUIRED | DEFAULT: 0
+users,totalKehadiran,number,Total kehadiran,REQUIRED | DEFAULT: 0
+users,streakHarian,number,Streak kehadiran berturut-turut,OPTIONAL | DEFAULT: 0
+users,maxStreak,number,Streak maksimal yang pernah dicapai,OPTIONAL | DEFAULT: 0
+users,rfidCardId,string,ID kartu RFID santri,OPTIONAL
+users,fotoProfil,string,URL foto profil (Firebase Storage),OPTIONAL
+users,notificationEnabled,boolean,Status notifikasi,OPTIONAL | DEFAULT: true
+users,language,string,Bahasa,"OPTIONAL | DEFAULT: 'id' | VALUES: id, en"
+users,level,number,Level gamifikasi,OPTIONAL | DEFAULT: 1
+users,exp,number,Experience points,OPTIONAL | DEFAULT: 0
+users,tanggalDaftar,timestamp,Tanggal pendaftaran,REQUIRED | DEFAULT: serverTimestamp()
+users,createdAt,timestamp,Waktu pembuatan,REQUIRED | DEFAULT: serverTimestamp()
+users,updatedAt,timestamp,Waktu update terakhir,REQUIRED | DEFAULT: serverTimestamp()
+
+jadwal,id,string,Document ID (auto),PRIMARY KEY
+jadwal,namaKegiatan,string,Nama kegiatan,REQUIRED
+jadwal,jenisKegiatan,string,Jenis kegiatan,"REQUIRED | VALUES: kajian, kegiatan_umum, ujian, khusus"
+jadwal,tanggal,timestamp,Tanggal kegiatan,REQUIRED
+jadwal,waktuMulai,string,Waktu mulai,REQUIRED | FORMAT: HH:mm (08:00)
+jadwal,waktuSelesai,string,Waktu selesai,REQUIRED | FORMAT: HH:mm (10:00)
+jadwal,lokasi,string,Lokasi kegiatan,REQUIRED
+jadwal,deskripsi,string,Deskripsi kegiatan,OPTIONAL
+jadwal,tema,string,Tema kajian (khusus kajian),OPTIONAL
+jadwal,pemateri,string,Pemateri (khusus kajian),OPTIONAL
+jadwal,kategori,string,Kategori,"OPTIONAL | DEFAULT: 'umum' | VALUES: umum, khusus, wajib"
+jadwal,targetPeserta,array,Target peserta,"OPTIONAL | DEFAULT: ['all'] | VALUES: ['santri'], ['dewan_guru'], ['all']"
+jadwal,maxPeserta,number,Maksimal peserta,OPTIONAL | DEFAULT: 0 | NOTE: 0 = unlimited
+jadwal,jumlahPeserta,number,Jumlah peserta terdaftar,OPTIONAL | DEFAULT: 0
+jadwal,requiresPresensi,boolean,Apakah memerlukan presensi,REQUIRED | DEFAULT: true
+jadwal,requiresRegistration,boolean,Apakah memerlukan registrasi,REQUIRED | DEFAULT: false
+jadwal,isAktif,boolean,Status aktif jadwal,REQUIRED | DEFAULT: true
+jadwal,isPublished,boolean,Status publish,REQUIRED | DEFAULT: true
+jadwal,poinKehadiran,number,Poin untuk kehadiran,OPTIONAL | DEFAULT: 10
+jadwal,reminderSent,boolean,Status reminder sudah dikirim,OPTIONAL | DEFAULT: false
+jadwal,createdBy,string,User ID pembuat,REQUIRED
+jadwal,createdByName,string,Nama pembuat,OPTIONAL
+jadwal,createdAt,timestamp,Waktu pembuatan,REQUIRED | DEFAULT: serverTimestamp()
+jadwal,updatedAt,timestamp,Waktu update,REQUIRED | DEFAULT: serverTimestamp()
+
+presensi,id,string,Document ID (auto),PRIMARY KEY
+presensi,userId,string,User ID santri,REQUIRED | FOREIGN KEY -> users.id
+presensi,userName,string,Nama santri,REQUIRED
+presensi,jadwalId,string,ID jadwal kegiatan,REQUIRED | FOREIGN KEY -> jadwal.id
+presensi,jadwalNama,string,Nama kegiatan,OPTIONAL
+presensi,tanggal,timestamp,Tanggal presensi,REQUIRED
+presensi,waktuPresensi,timestamp,Waktu presensi dilakukan,OPTIONAL
+presensi,status,string,Status presensi,"REQUIRED | DEFAULT: 'alpha' | VALUES: hadir (10 poin), terlambat (5 poin), izin (5 poin), sakit (5 poin), alpha (0 poin)"
+presensi,keterangan,string,Keterangan tambahan,OPTIONAL
+presensi,poin,number,Poin yang diperoleh,REQUIRED | DEFAULT: 0
+presensi,poinDiperoleh,number,Alias untuk poin,REQUIRED | DEFAULT: 0
+presensi,method,string,Metode presensi,"OPTIONAL | DEFAULT: 'manual' | VALUES: rfid, manual, app"
+presensi,rfidUid,string,UID kartu RFID (jika metode RFID),OPTIONAL
+presensi,deviceId,string,ID device RFID reader,OPTIONAL
+presensi,deviceLocation,string,Lokasi device,OPTIONAL
+presensi,isManualEntry,boolean,Apakah input manual,REQUIRED | DEFAULT: false
+presensi,manualEntryBy,string,User ID yang input manual,OPTIONAL
+presensi,isBonus,boolean,Apakah mendapat bonus poin,OPTIONAL | DEFAULT: false
+presensi,bonusReason,string,Alasan bonus,"OPTIONAL | VALUES: streak_weekly, perfect_month"
+presensi,photoUrl,string,URL foto presensi,OPTIONAL
+presensi,latitude,number,Koordinat latitude,OPTIONAL
+presensi,longitude,number,Koordinat longitude,OPTIONAL
+presensi,createdAt,timestamp,Waktu pembuatan,REQUIRED | DEFAULT: serverTimestamp()
+presensi,updatedAt,timestamp,Waktu update,OPTIONAL | DEFAULT: serverTimestamp()
+
+presensi_aggregates,id,string,Document ID (generated),PRIMARY KEY | FORMAT: {userId}_{periode}_{periodeKey}
+presensi_aggregates,userId,string,User ID santri,REQUIRED | FOREIGN KEY -> users.id
+presensi_aggregates,periode,string,Periode,"REQUIRED | VALUES: daily, weekly, monthly, semester, yearly"
+presensi_aggregates,periodeKey,string,Key periode,"REQUIRED | FORMAT: YYYY-MM-DD, YYYY-Www, YYYY-MM, YYYY-S1/S2, YYYY"
+presensi_aggregates,totalHadir,number,Total hadir,REQUIRED | DEFAULT: 0
+presensi_aggregates,totalTerlambat,number,Total terlambat,REQUIRED | DEFAULT: 0
+presensi_aggregates,totalIzin,number,Total izin,REQUIRED | DEFAULT: 0
+presensi_aggregates,totalSakit,number,Total sakit,REQUIRED | DEFAULT: 0
+presensi_aggregates,totalAlpha,number,Total alpha,REQUIRED | DEFAULT: 0
+presensi_aggregates,totalPoin,number,Total poin periode ini,REQUIRED | DEFAULT: 0
+presensi_aggregates,startDate,timestamp,Tanggal mulai periode,REQUIRED
+presensi_aggregates,endDate,timestamp,Tanggal akhir periode,REQUIRED
+presensi_aggregates,persentaseKehadiran,number,Persentase kehadiran (%),OPTIONAL | DEFAULT: 0
+presensi_aggregates,detailPerJadwal,map,Breakdown per jadwal,OPTIONAL | DEFAULT: {} | TYPE: JSON object
+presensi_aggregates,lastUpdated,timestamp,Waktu update terakhir,REQUIRED | DEFAULT: serverTimestamp()
+
+pengumuman,id,string,Document ID (auto),PRIMARY KEY
+pengumuman,judul,string,Judul pengumuman,REQUIRED
+pengumuman,isi,string,Isi pengumuman (support markdown),REQUIRED
+pengumuman,kategori,string,Kategori,"REQUIRED | DEFAULT: 'umum' | VALUES: umum, akademik, keuangan, kegiatan"
+pengumuman,isPenting,boolean,Apakah pengumuman penting,REQUIRED | DEFAULT: false
+pengumuman,priority,number,Prioritas tampilan,OPTIONAL | DEFAULT: 3 | RANGE: 1-5
+pengumuman,targetAudience,array,Target,"REQUIRED | DEFAULT: ['all'] | VALUES: ['all'], ['santri'], ['dewan_guru'], ['admin']"
+pengumuman,gambarUrl,array,Array URL gambar,OPTIONAL | DEFAULT: []
+pengumuman,attachmentUrl,array,Array URL attachment,OPTIONAL | DEFAULT: []
+pengumuman,tags,array,Tags untuk pencarian,OPTIONAL | DEFAULT: []
+pengumuman,viewCount,number,Jumlah views,OPTIONAL | DEFAULT: 0
+pengumuman,likeCount,number,Jumlah likes,OPTIONAL | DEFAULT: 0
+pengumuman,commentCount,number,Jumlah komentar,OPTIONAL | DEFAULT: 0
+pengumuman,publishAt,timestamp,Waktu publish (scheduled),OPTIONAL
+pengumuman,expireAt,timestamp,Waktu kadaluarsa,OPTIONAL
+pengumuman,isActive,boolean,Status aktif,REQUIRED | DEFAULT: true
+pengumuman,isPublished,boolean,Status published,REQUIRED | DEFAULT: true
+pengumuman,createdBy,string,User ID pembuat,REQUIRED | FOREIGN KEY -> users.id
+pengumuman,authorName,string,Nama pembuat,REQUIRED
+pengumuman,authorRole,string,Role pembuat,OPTIONAL
+pengumuman,tanggal,timestamp,Tanggal pengumuman,REQUIRED | DEFAULT: serverTimestamp()
+pengumuman,createdAt,timestamp,Waktu pembuatan,REQUIRED | DEFAULT: serverTimestamp()
+pengumuman,updatedAt,timestamp,Waktu update,REQUIRED | DEFAULT: serverTimestamp()
+
+materi,id,string,Document ID (auto),PRIMARY KEY
+materi,judul,string,Judul materi,REQUIRED
+materi,deskripsi,string,Deskripsi materi,REQUIRED
+materi,jenis,string,Jenis materi,"REQUIRED | VALUES: alquran, hadits, fiqih, akhlak, tafsir, tajwid"
+materi,level,string,Level materi,"REQUIRED | DEFAULT: 'pemula' | VALUES: pemula, menengah, lanjutan"
+materi,konten,string,Konten materi (markdown/HTML),REQUIRED
+materi,videoUrl,string,URL video pembelajaran,OPTIONAL
+materi,audioUrl,string,URL audio,OPTIONAL
+materi,pdfUrl,string,URL file PDF,OPTIONAL
+materi,thumbnailUrl,string,URL thumbnail,OPTIONAL
+materi,estimasiWaktu,number,Estimasi waktu belajar (menit),OPTIONAL | DEFAULT: 30
+materi,poinSelesai,number,Poin untuk menyelesaikan,OPTIONAL | DEFAULT: 20
+materi,urutan,number,Urutan materi dalam jenis,OPTIONAL | DEFAULT: 0
+materi,prerequisite,array,Array ID materi prerequisite,OPTIONAL | DEFAULT: []
+materi,tags,array,Tags untuk pencarian,OPTIONAL | DEFAULT: []
+materi,viewCount,number,Jumlah views,OPTIONAL | DEFAULT: 0
+materi,completionCount,number,Jumlah yang selesai,OPTIONAL | DEFAULT: 0
+materi,isActive,boolean,Status aktif,REQUIRED | DEFAULT: true
+materi,isPublished,boolean,Status published,REQUIRED | DEFAULT: true
+materi,createdBy,string,User ID pembuat,REQUIRED | FOREIGN KEY -> users.id
+materi,createdAt,timestamp,Waktu pembuatan,REQUIRED | DEFAULT: serverTimestamp()
+materi,updatedAt,timestamp,Waktu update,REQUIRED | DEFAULT: serverTimestamp()
+
+progress_santri,id,string,Document ID (auto),PRIMARY KEY
+progress_santri,santriId,string,User ID santri,REQUIRED | FOREIGN KEY -> users.id
+progress_santri,materiId,string,ID materi,REQUIRED | FOREIGN KEY -> materi.id
+progress_santri,status,string,Status progress,"REQUIRED | DEFAULT: 'belum_mulai' | VALUES: belum_mulai, sedang_belajar, selesai"
+progress_santri,persentase,number,Persentase progress,REQUIRED | DEFAULT: 0 | RANGE: 0-100
+progress_santri,waktuMulai,timestamp,Waktu mulai belajar,OPTIONAL
+progress_santri,waktuSelesai,timestamp,Waktu selesai,OPTIONAL
+progress_santri,durasiTotal,number,Total durasi belajar (detik),OPTIONAL | DEFAULT: 0
+progress_santri,nilaiTest,number,Nilai test/quiz,OPTIONAL | RANGE: 0-100
+progress_santri,jumlahUlangan,number,Jumlah mengulang materi,OPTIONAL | DEFAULT: 0
+progress_santri,catatan,string,Catatan santri,OPTIONAL
+progress_santri,lastPosition,number,Posisi terakhir (untuk video),OPTIONAL | DEFAULT: 0
+progress_santri,poinDiperoleh,number,Poin yang sudah diperoleh,OPTIONAL | DEFAULT: 0
+progress_santri,createdAt,timestamp,Waktu pembuatan,REQUIRED | DEFAULT: serverTimestamp()
+progress_santri,updatedAt,timestamp,Waktu update,REQUIRED | DEFAULT: serverTimestamp()
+
+sesi_kajian,id,string,Document ID (auto),PRIMARY KEY
+sesi_kajian,santriId,string,User ID santri,REQUIRED | FOREIGN KEY -> users.id
+sesi_kajian,materiId,string,ID materi,REQUIRED | FOREIGN KEY -> materi.id
+sesi_kajian,tanggal,timestamp,Tanggal sesi,REQUIRED | DEFAULT: serverTimestamp()
+sesi_kajian,durasi,number,Durasi sesi (detik),REQUIRED | DEFAULT: 0
+sesi_kajian,catatan,string,Catatan sesi,OPTIONAL
+sesi_kajian,poinDiperoleh,number,Poin sesi ini,OPTIONAL | DEFAULT: 0
+sesi_kajian,aktifitas,array,Log aktivitas dalam sesi,OPTIONAL | DEFAULT: [] | TYPE: JSON array
+sesi_kajian,createdAt,timestamp,Waktu pembuatan,REQUIRED | DEFAULT: serverTimestamp()
+
+rfid_cards,id,string,Document ID (cardId/UID),PRIMARY KEY (cardId)
+rfid_cards,cardId,string,UID kartu RFID,REQUIRED | UNIQUE
+rfid_cards,userId,string,User ID santri (jika sudah terdaftar),OPTIONAL | FOREIGN KEY -> users.id
+rfid_cards,userName,string,Nama santri,OPTIONAL
+rfid_cards,status,string,Status kartu,"REQUIRED | DEFAULT: 'unassigned' | VALUES: active, inactive, blocked, unassigned"
+rfid_cards,isRegistered,boolean,Apakah sudah didaftarkan,REQUIRED | DEFAULT: false
+rfid_cards,lastUsed,timestamp,Waktu penggunaan terakhir,OPTIONAL
+rfid_cards,totalScans,number,Total scan,OPTIONAL | DEFAULT: 0
+rfid_cards,registeredAt,timestamp,Waktu pendaftaran,OPTIONAL
+rfid_cards,registeredBy,string,User ID pendaftar,OPTIONAL | FOREIGN KEY -> users.id
+rfid_cards,notes,string,Catatan,OPTIONAL
+rfid_cards,createdAt,timestamp,Waktu pembuatan,REQUIRED | DEFAULT: serverTimestamp()
+rfid_cards,updatedAt,timestamp,Waktu update,REQUIRED | DEFAULT: serverTimestamp()
+
+rfid_scan_requests,id,string,Document ID (auto),PRIMARY KEY
+rfid_scan_requests,requestId,string,Unique request ID,REQUIRED | UNIQUE
+rfid_scan_requests,requestedBy,string,User ID yang request,REQUIRED | FOREIGN KEY -> users.id
+rfid_scan_requests,status,string,Status request,"REQUIRED | DEFAULT: 'pending' | VALUES: pending, scanned, cancelled, expired"
+rfid_scan_requests,cardId,string,UID kartu (setelah di-scan),OPTIONAL
+rfid_scan_requests,purpose,string,Tujuan request,"REQUIRED | DEFAULT: 'register' | VALUES: register, verify, check"
+rfid_scan_requests,expiresAt,timestamp,Waktu kadaluarsa request,REQUIRED
+rfid_scan_requests,scannedAt,timestamp,Waktu di-scan,OPTIONAL
+rfid_scan_requests,deviceId,string,ID device yang scan,OPTIONAL
+rfid_scan_requests,createdAt,timestamp,Waktu pembuatan,REQUIRED | DEFAULT: serverTimestamp()
+
+activities,id,string,Document ID (auto),PRIMARY KEY
+activities,userId,string,User ID pelaku,REQUIRED | FOREIGN KEY -> users.id
+activities,userName,string,Nama pelaku,OPTIONAL
+activities,userRole,string,Role pelaku,OPTIONAL
+activities,action,string,Jenis aksi,"REQUIRED | VALUES: create, update, delete, login, logout"
+activities,module,string,Module,"REQUIRED | VALUES: presensi, jadwal, pengumuman, user, dll"
+activities,targetId,string,ID target/objek,OPTIONAL
+activities,targetName,string,Nama target,OPTIONAL
+activities,description,string,Deskripsi aktivitas,REQUIRED
+activities,metadata,map,Data tambahan,OPTIONAL | DEFAULT: {} | TYPE: JSON object
+activities,ipAddress,string,IP address,OPTIONAL
+activities,userAgent,string,User agent,OPTIONAL
+activities,timestamp,timestamp,Waktu aktivitas,REQUIRED | DEFAULT: serverTimestamp() | NOTE: Immutable (cannot be updated/deleted)

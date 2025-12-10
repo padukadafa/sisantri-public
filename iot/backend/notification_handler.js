@@ -98,7 +98,7 @@ onSnapshot(colRefPengumuman, (snapshot) => {
           tokens,
           "Pengumuman Baru",
           `Ada pengumuman baru dari ${pengumumanData.createdByName}: ${
-            pengumumanData.konten ? pengumumanData.konten?.slice(0, 20) : ""
+            pengumumanData.konten ? pengumumanData.konten?.slice(0, 40) : ""
           }...`
         );
       }
@@ -145,7 +145,7 @@ onSnapshot(colRefJadwal, (snapshot) => {
           tokens,
           "Jadwal Baru",
           `Ada jadwal baru : ${
-            data.deskripsi ? data.deskripsi?.slice(0, 20) : ""
+            data.deskripsi ? data.deskripsi?.slice(0, 40) : ""
           }...`
         );
       }

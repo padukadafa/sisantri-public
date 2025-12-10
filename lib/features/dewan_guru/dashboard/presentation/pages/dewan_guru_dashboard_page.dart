@@ -7,9 +7,19 @@ import 'package:sisantri/features/santri/leaderboard/presentation/aggregate_lead
 import 'package:sisantri/shared/models/user_model.dart';
 import 'package:sisantri/shared/models/jadwal_model.dart';
 import 'package:sisantri/features/santri/presensi/presentation/pages/presensi_summary_page.dart';
-import 'package:sisantri/features/santri/leaderboard/presentation/leaderboard_page.dart';
 import 'package:sisantri/features/shared/announcement/presentation/announcement_page.dart';
 import 'package:sisantri/features/shared/jadwal/presentation/jadwal_page.dart';
+import 'package:sisantri/features/dewan_guru/navigation/dewan_guru_navigation.dart';
+import 'package:sisantri/shared/models/presensi_model.dart';
+import 'package:sisantri/features/shared/announcement/data/models/announcement_model.dart';
+import 'package:sisantri/shared/services/announcement_service.dart';
+
+/// Provider untuk pengumuman terbaru (3 pengumuman)
+final recentAnnouncementsProvider = StreamProvider<List<AnnouncementModel>>((
+  ref,
+) {
+  return AnnouncementService.getRecentPengumuman(limit: 3);
+});
 
 /// Provider untuk jadwal terdekat (3 jadwal terdekat)
 final jadwalTerdekatProvider = StreamProvider<List<JadwalModel>>((ref) {
@@ -42,6 +52,8 @@ class DewanGuruDashboardPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final statsAsync = ref.watch(dewaGuruDashboardStatsProvider);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Dashboard Dewan Guru'),
@@ -49,19 +61,65 @@ class DewanGuruDashboardPage extends ConsumerWidget {
         elevation: 0,
         foregroundColor: AppTheme.primaryColor,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _buildQuickStats(),
-            const SizedBox(height: 24),
-            // _buildMenuGrid(context),
-            const SizedBox(height: 24),
-            _buildJadwalTerdekat(ref),
-            const SizedBox(height: 24),
-            _buildRecentUpdates(),
-          ],
+      body: RefreshIndicator(
+        onRefresh: () async {
+          ref.invalidate(dewaGuruDashboardStatsProvider);
+          await Future.delayed(const Duration(milliseconds: 500));
+        },
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          child: statsAsync.when(
+            loading: () => const Center(
+              child: Padding(
+                padding: EdgeInsets.all(32.0),
+                child: CircularProgressIndicator(),
+              ),
+            ),
+            error: (error, stack) => Center(
+              child: Card(
+                color: Colors.red.shade50,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(Icons.error_outline, color: Colors.red, size: 48),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Error loading dashboard',
+                        style: TextStyle(
+                          color: Colors.red.shade900,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        error.toString(),
+                        style: TextStyle(
+                          color: Colors.red.shade700,
+                          fontSize: 12,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            data: (stats) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildQuickStats(stats),
+                const SizedBox(height: 24),
+                // _buildMenuGrid(context),
+                const SizedBox(height: 24),
+                _buildJadwalTerdekat(ref),
+                const SizedBox(height: 24),
+                _buildAnnouncements(context, ref),
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -141,14 +199,28 @@ class DewanGuruDashboardPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildQuickStats() {
+  Widget _buildQuickStats(Map<String, dynamic> stats) {
+    final totalSantri = stats['totalSantri'] ?? 0;
+    final activeSantri = stats['activeSantri'] ?? 0;
+    final todayPresensi = stats['todayPresensi'] as List<PresensiModel>? ?? [];
+
+    // Hitung jumlah yang hadir hari ini
+    final presentCount = todayPresensi
+        .where((p) => p.status == StatusPresensi.hadir)
+        .length;
+
+    // Hitung persentase kehadiran
+    final attendancePercentage = activeSantri > 0
+        ? (presentCount / activeSantri * 100).toStringAsFixed(0)
+        : '0';
+
     return Row(
       children: [
         Expanded(
           child: _buildStatCard(
             title: 'Total Santri',
-            value: '45',
-            subtitle: 'Santri Aktif',
+            value: totalSantri.toString(),
+            subtitle: '$activeSantri Santri Aktif',
             icon: Icons.people,
             color: Colors.blue,
           ),
@@ -157,8 +229,8 @@ class DewanGuruDashboardPage extends ConsumerWidget {
         Expanded(
           child: _buildStatCard(
             title: 'Kehadiran Hari Ini',
-            value: '92%',
-            subtitle: '41 dari 45 santri',
+            value: '$presentCount / $activeSantri',
+            subtitle: '$attendancePercentage% Hadir',
             icon: Icons.how_to_reg,
             color: Colors.green,
           ),
@@ -609,103 +681,216 @@ class DewanGuruDashboardPage extends ConsumerWidget {
     }
   }
 
-  Widget _buildRecentUpdates() {
-    final updates = [
-      {
-        'title': 'Pengumuman Baru',
-        'description': 'Jadwal ujian semester telah diperbarui',
-        'time': '2 jam lalu',
-        'icon': Icons.campaign,
-        'color': Colors.orange,
-      },
-      {
-        'title': 'Presensi Kajian Tafsir',
-        'description': '42 dari 45 santri telah melakukan presensi',
-        'time': '3 jam lalu',
-        'icon': Icons.menu_book,
-        'color': Colors.blue,
-      },
-      {
-        'title': 'Ranking Diperbarui',
-        'description': 'Ahmad Rizki naik ke posisi #1 leaderboard',
-        'time': '5 jam lalu',
-        'icon': Icons.emoji_events,
-        'color': Colors.amber,
-      },
-    ];
+  Widget _buildAnnouncements(BuildContext context, WidgetRef ref) {
+    final announcementsAsync = ref.watch(recentAnnouncementsProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Update Terbaru',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Pengumuman',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const AnnouncementPage(),
+                  ),
+                );
+              },
+              child: const Text('Lihat Semua', style: TextStyle(fontSize: 12)),
+            ),
+          ],
         ),
         const SizedBox(height: 16),
-        Card(
-          elevation: 2,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+        announcementsAsync.when(
+          loading: () => const Center(
+            child: Padding(
+              padding: EdgeInsets.all(16.0),
+              child: CircularProgressIndicator(),
+            ),
           ),
-          child: Column(
-            children: updates.asMap().entries.map((entry) {
-              final index = entry.key;
-              final update = entry.value;
-
-              return Column(
+          error: (error, stack) => Card(
+            color: Colors.orange.shade50,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
                 children: [
-                  ListTile(
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
+                  Icon(Icons.warning_amber, color: Colors.orange),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Gagal memuat pengumuman',
+                      style: TextStyle(color: Colors.orange.shade900),
                     ),
-                    leading: Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: (update['color'] as Color).withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Icon(
-                        update['icon'] as IconData,
-                        color: update['color'] as Color,
-                        size: 20,
-                      ),
-                    ),
-                    title: Text(
-                      update['title'] as String,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 14,
-                      ),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          data: (announcements) {
+            if (announcements.isEmpty) {
+              return Card(
+                elevation: 2,
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Center(
+                    child: Column(
                       children: [
-                        const SizedBox(height: 4),
-                        Text(
-                          update['description'] as String,
-                          style: const TextStyle(fontSize: 12),
+                        Icon(
+                          Icons.announcement,
+                          size: 48,
+                          color: Colors.grey[400],
                         ),
-                        const SizedBox(height: 4),
+                        const SizedBox(height: 8),
                         Text(
-                          update['time'] as String,
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey[600],
-                          ),
+                          'Belum ada pengumuman',
+                          style: TextStyle(color: Colors.grey[600]),
                         ),
                       ],
                     ),
                   ),
-                  if (index < updates.length - 1) const Divider(height: 1),
-                ],
+                ),
               );
-            }).toList(),
-          ),
+            }
+
+            return Card(
+              elevation: 2,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                children: announcements.asMap().entries.map((entry) {
+                  final index = entry.key;
+                  final announcement = entry.value;
+
+                  // Tentukan icon dan warna berdasarkan kategori
+                  IconData icon;
+                  Color color;
+
+                  switch (announcement.kategori.toLowerCase()) {
+                    case 'akademik':
+                      icon = Icons.school;
+                      color = Colors.blue;
+                      break;
+                    case 'kegiatan':
+                      icon = Icons.event;
+                      color = Colors.green;
+                      break;
+                    case 'penting':
+                      icon = Icons.priority_high;
+                      color = Colors.red;
+                      break;
+                    case 'umum':
+                    default:
+                      icon = Icons.campaign;
+                      color = Colors.orange;
+                      break;
+                  }
+
+                  // Hitung waktu relatif
+                  final now = DateTime.now();
+                  final diff = now.difference(announcement.createdAt);
+                  String timeAgo;
+
+                  if (diff.inDays > 0) {
+                    timeAgo = '${diff.inDays} hari lalu';
+                  } else if (diff.inHours > 0) {
+                    timeAgo = '${diff.inHours} jam lalu';
+                  } else if (diff.inMinutes > 0) {
+                    timeAgo = '${diff.inMinutes} menit lalu';
+                  } else {
+                    timeAgo = 'Baru saja';
+                  }
+
+                  return Column(
+                    children: [
+                      ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        leading: Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Icon(icon, color: color, size: 20),
+                        ),
+                        title: Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                announcement.judul,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (announcement.isPinned)
+                              Container(
+                                margin: const EdgeInsets.only(left: 4),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 6,
+                                  vertical: 2,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.red,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  'PENTING',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const SizedBox(height: 4),
+                            Text(
+                              announcement.konten,
+                              style: const TextStyle(fontSize: 12),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              timeAgo,
+                              style: TextStyle(
+                                fontSize: 11,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (index < announcements.length - 1)
+                        const Divider(height: 1),
+                    ],
+                  );
+                }).toList(),
+              ),
+            );
+          },
         ),
       ],
     );
