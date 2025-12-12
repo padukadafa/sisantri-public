@@ -7,6 +7,9 @@ import '../widgets/report/statistics_grid.dart';
 import '../widgets/report/attendance_distribution.dart';
 import '../widgets/report/user_summary_card.dart';
 import '../widgets/report/excel_export_service.dart';
+import '../widgets/report/gender_statistics_card.dart';
+import '../widgets/report/performance_distribution_card.dart';
+import '../widgets/report/performers_card.dart';
 
 /// Halaman Laporan Presensi
 class AttendanceReportPage extends ConsumerStatefulWidget {
@@ -167,6 +170,14 @@ class _SummaryTab extends ConsumerWidget {
         error: (error, stack) => _ErrorWidget(error: error.toString()),
         data: (data) {
           final stats = data['statistics'] as Map<String, dynamic>;
+          final genderStats = data['genderStatistics'] as Map<String, dynamic>?;
+          final performanceStats =
+              data['performanceStatistics'] as Map<String, dynamic>?;
+          final topPerformers =
+              data['topPerformers'] as List<Map<String, dynamic>>?;
+          final bottomPerformers =
+              data['bottomPerformers'] as List<Map<String, dynamic>>?;
+
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16),
             child: Column(
@@ -175,6 +186,25 @@ class _SummaryTab extends ConsumerWidget {
                 StatisticsGrid(statistics: stats),
                 const SizedBox(height: 16),
                 AttendanceDistribution(statistics: stats),
+                if (genderStats != null) ...[
+                  const SizedBox(height: 16),
+                  GenderStatisticsCard(genderStats: genderStats),
+                ],
+                if (performanceStats != null) ...[
+                  const SizedBox(height: 16),
+                  PerformanceDistributionCard(
+                    performanceStats: performanceStats,
+                  ),
+                ],
+                if (topPerformers != null && topPerformers.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  TopPerformersCard(topPerformers: topPerformers),
+                ],
+                if (bottomPerformers != null &&
+                    bottomPerformers.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  BottomPerformersCard(bottomPerformers: bottomPerformers),
+                ],
               ],
             ),
           );

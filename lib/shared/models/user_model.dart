@@ -12,6 +12,7 @@ class UserModel {
   final String? jurusan;
   final String? kampus;
   final String? tempatKos;
+  final String? jenisKelamin;
   final List<String>? deviceTokens;
 
   const UserModel({
@@ -29,6 +30,7 @@ class UserModel {
     this.kampus,
     this.tempatKos,
     this.deviceTokens,
+    this.jenisKelamin,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -57,6 +59,7 @@ class UserModel {
       deviceTokens: json['deviceTokens'] != null
           ? List<String>.from(json['deviceTokens'] as List)
           : null,
+      jenisKelamin: json['jenis_kelamin'] as String?,
     );
   }
 
@@ -76,6 +79,7 @@ class UserModel {
       'kampus': kampus,
       'tempatKos': tempatKos,
       'deviceTokens': deviceTokens,
+      'jenis_kelamin': jenisKelamin,
     };
   }
 
@@ -95,6 +99,7 @@ class UserModel {
     String? kampus,
     String? tempatKos,
     List<String>? deviceTokens,
+    String? jenisKelamin,
   }) {
     return UserModel(
       id: id ?? this.id,
@@ -111,6 +116,7 @@ class UserModel {
       kampus: kampus ?? this.kampus,
       tempatKos: tempatKos ?? this.tempatKos,
       deviceTokens: deviceTokens ?? this.deviceTokens,
+      jenisKelamin: jenisKelamin ?? this.jenisKelamin,
     );
   }
 

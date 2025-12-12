@@ -51,6 +51,11 @@ class ExcelExportService {
         reportData['userSummary'] as Map<String, Map<String, dynamic>>;
     final periode = reportData['periode'] as String;
     final periodeKey = reportData['periodeKey'] as String;
+    final genderStats = reportData['genderStatistics'] as Map<String, dynamic>?;
+    final performanceStats =
+        reportData['performanceStatistics'] as Map<String, dynamic>?;
+    final topPerformers = reportData['topPerformers'] as List<dynamic>?;
+    final bottomPerformers = reportData['bottomPerformers'] as List<dynamic>?;
 
     // Buat sheets
     final summarySheet = excel['Ringkasan'];
@@ -58,6 +63,24 @@ class ExcelExportService {
     final santriSheet = excel['Per Santri'];
 
     _createSummarySheet(summarySheet, statistics, filter, periode, periodeKey);
+
+    // Buat gender sheet jika ada data
+    if (genderStats != null) {
+      final genderSheet = excel['Analisis Gender'];
+      _createGenderAnalysisSheet(genderSheet, genderStats, statistics);
+    }
+
+    // Buat performance sheet jika ada data
+    if (performanceStats != null) {
+      final performanceSheet = excel['Analisis Performa'];
+      _createPerformanceAnalysisSheet(
+        performanceSheet,
+        performanceStats,
+        topPerformers ?? [],
+        bottomPerformers ?? [],
+      );
+    }
+
     _createAggregateSheet(aggregateSheet, aggregates, users);
     _createSantriSummarySheet(santriSheet, userSummary);
 
@@ -247,11 +270,369 @@ class ExcelExportService {
       '${stats['attendanceRate'].toStringAsFixed(1)}%',
       bold: true,
     );
+    row += 2;
+
+    // Informasi tambahan
+    _setCell(sheet, row, 0, 'Total Santri:', bold: true);
+    _setCell(sheet, row, 1, stats['totalSantri'].toString());
+    row++;
+
+    _setCell(sheet, row, 0, 'Total Poin:', bold: true);
+    _setCell(sheet, row, 1, stats['totalPoin'].toString());
 
     // Set column widths
     sheet.setColumnWidth(0, 25);
     sheet.setColumnWidth(1, 15);
     sheet.setColumnWidth(2, 15);
+  }
+
+  /// Buat sheet analisis gender
+  static void _createGenderAnalysisSheet(
+    excel_lib.Sheet sheet,
+    Map<String, dynamic> genderStats,
+    Map<String, dynamic> overallStats,
+  ) {
+    int row = 0;
+
+    // === HEADER ===
+    _setCell(sheet, row, 0, 'ANALISIS PRESENSI BERDASARKAN GENDER', bold: true);
+    row += 2;
+
+    final maleStats = genderStats['male'] as Map<String, dynamic>;
+    final femaleStats = genderStats['female'] as Map<String, dynamic>;
+
+    // === RINGKASAN ===
+    _setCell(sheet, row, 0, 'RINGKASAN GENDER', bold: true);
+    row++;
+
+    _setCell(sheet, row, 0, 'Gender', bold: true);
+    _setCell(sheet, row, 1, 'Jumlah Santri', bold: true);
+    _setCell(sheet, row, 2, 'Total Presensi', bold: true);
+    _setCell(sheet, row, 3, 'Tingkat Kehadiran', bold: true);
+    row++;
+
+    // Laki-laki
+    _setCell(sheet, row, 0, '👨 Laki-laki');
+    _setCell(sheet, row, 1, maleStats['count'].toString());
+    _setCell(sheet, row, 2, maleStats['totalRecords'].toString());
+    _setCell(
+      sheet,
+      row,
+      3,
+      '${maleStats['attendanceRate'].toStringAsFixed(1)}%',
+      bold: true,
+    );
+    row++;
+
+    // Perempuan
+    _setCell(sheet, row, 0, '👩 Perempuan');
+    _setCell(sheet, row, 1, femaleStats['count'].toString());
+    _setCell(sheet, row, 2, femaleStats['totalRecords'].toString());
+    _setCell(
+      sheet,
+      row,
+      3,
+      '${femaleStats['attendanceRate'].toStringAsFixed(1)}%',
+      bold: true,
+    );
+    row += 2;
+
+    // === DETAIL LAKI-LAKI ===
+    _setCell(sheet, row, 0, 'DETAIL LAKI-LAKI', bold: true);
+    row++;
+
+    _setCell(sheet, row, 0, 'Status', bold: true);
+    _setCell(sheet, row, 1, 'Jumlah', bold: true);
+    _setCell(sheet, row, 2, 'Persentase', bold: true);
+    row++;
+
+    final maleTotal = maleStats['totalRecords'] as int;
+
+    _setCell(sheet, row, 0, '✓ Hadir');
+    _setCell(sheet, row, 1, maleStats['presentCount'].toString());
+    _setCell(
+      sheet,
+      row,
+      2,
+      maleTotal > 0
+          ? '${(maleStats['presentCount'] / maleTotal * 100).toStringAsFixed(1)}%'
+          : '0.0%',
+    );
+    row++;
+
+    _setCell(sheet, row, 0, '⚕ Sakit');
+    _setCell(sheet, row, 1, maleStats['sickCount'].toString());
+    _setCell(
+      sheet,
+      row,
+      2,
+      maleTotal > 0
+          ? '${(maleStats['sickCount'] / maleTotal * 100).toStringAsFixed(1)}%'
+          : '0.0%',
+    );
+    row++;
+
+    _setCell(sheet, row, 0, 'ℹ Izin');
+    _setCell(sheet, row, 1, maleStats['excusedCount'].toString());
+    _setCell(
+      sheet,
+      row,
+      2,
+      maleTotal > 0
+          ? '${(maleStats['excusedCount'] / maleTotal * 100).toStringAsFixed(1)}%'
+          : '0.0%',
+    );
+    row++;
+
+    _setCell(sheet, row, 0, '✗ Alpha');
+    _setCell(sheet, row, 1, maleStats['absentCount'].toString());
+    _setCell(
+      sheet,
+      row,
+      2,
+      maleTotal > 0
+          ? '${(maleStats['absentCount'] / maleTotal * 100).toStringAsFixed(1)}%'
+          : '0.0%',
+    );
+    row += 2;
+
+    // === DETAIL PEREMPUAN ===
+    _setCell(sheet, row, 0, 'DETAIL PEREMPUAN', bold: true);
+    row++;
+
+    _setCell(sheet, row, 0, 'Status', bold: true);
+    _setCell(sheet, row, 1, 'Jumlah', bold: true);
+    _setCell(sheet, row, 2, 'Persentase', bold: true);
+    row++;
+
+    final femaleTotal = femaleStats['totalRecords'] as int;
+
+    _setCell(sheet, row, 0, '✓ Hadir');
+    _setCell(sheet, row, 1, femaleStats['presentCount'].toString());
+    _setCell(
+      sheet,
+      row,
+      2,
+      femaleTotal > 0
+          ? '${(femaleStats['presentCount'] / femaleTotal * 100).toStringAsFixed(1)}%'
+          : '0.0%',
+    );
+    row++;
+
+    _setCell(sheet, row, 0, '⚕ Sakit');
+    _setCell(sheet, row, 1, femaleStats['sickCount'].toString());
+    _setCell(
+      sheet,
+      row,
+      2,
+      femaleTotal > 0
+          ? '${(femaleStats['sickCount'] / femaleTotal * 100).toStringAsFixed(1)}%'
+          : '0.0%',
+    );
+    row++;
+
+    _setCell(sheet, row, 0, 'ℹ Izin');
+    _setCell(sheet, row, 1, femaleStats['excusedCount'].toString());
+    _setCell(
+      sheet,
+      row,
+      2,
+      femaleTotal > 0
+          ? '${(femaleStats['excusedCount'] / femaleTotal * 100).toStringAsFixed(1)}%'
+          : '0.0%',
+    );
+    row++;
+
+    _setCell(sheet, row, 0, '✗ Alpha');
+    _setCell(sheet, row, 1, femaleStats['absentCount'].toString());
+    _setCell(
+      sheet,
+      row,
+      2,
+      femaleTotal > 0
+          ? '${(femaleStats['absentCount'] / femaleTotal * 100).toStringAsFixed(1)}%'
+          : '0.0%',
+    );
+    row += 2;
+
+    // === PERBANDINGAN ===
+    _setCell(sheet, row, 0, 'PERBANDINGAN', bold: true);
+    row++;
+
+    final maleRate = maleStats['attendanceRate'] as double;
+    final femaleRate = femaleStats['attendanceRate'] as double;
+    final difference = (maleRate - femaleRate).abs();
+    final better = maleRate > femaleRate ? 'Laki-laki' : 'Perempuan';
+
+    _setCell(sheet, row, 0, 'Selisih Kehadiran:');
+    _setCell(sheet, row, 1, '${difference.toStringAsFixed(1)}%');
+    row++;
+
+    _setCell(sheet, row, 0, 'Kehadiran Lebih Baik:');
+    _setCell(sheet, row, 1, better, bold: true);
+
+    // Set column widths
+    sheet.setColumnWidth(0, 25);
+    sheet.setColumnWidth(1, 15);
+    sheet.setColumnWidth(2, 15);
+  }
+
+  /// Buat sheet analisis performa
+  static void _createPerformanceAnalysisSheet(
+    excel_lib.Sheet sheet,
+    Map<String, dynamic> performanceStats,
+    List<dynamic> topPerformers,
+    List<dynamic> bottomPerformers,
+  ) {
+    int row = 0;
+
+    // === HEADER ===
+    _setCell(sheet, row, 0, 'ANALISIS PERFORMA SANTRI', bold: true);
+    row += 2;
+
+    // === DISTRIBUSI PERFORMA ===
+    _setCell(sheet, row, 0, 'DISTRIBUSI PERFORMA', bold: true);
+    row++;
+
+    _setCell(sheet, row, 0, 'Kategori', bold: true);
+    _setCell(sheet, row, 1, 'Range', bold: true);
+    _setCell(sheet, row, 2, 'Jumlah Santri', bold: true);
+    _setCell(sheet, row, 3, 'Persentase', bold: true);
+    row++;
+
+    final totalSantri = performanceStats.values.fold<int>(
+      0,
+      (sum, val) => sum + (val as int),
+    );
+
+    // Excellent
+    _setCell(sheet, row, 0, '⭐ Excellent');
+    _setCell(sheet, row, 1, '≥ 90%');
+    _setCell(sheet, row, 2, performanceStats['excellent'].toString());
+    _setCell(
+      sheet,
+      row,
+      3,
+      totalSantri > 0
+          ? '${(performanceStats['excellent'] / totalSantri * 100).toStringAsFixed(1)}%'
+          : '0.0%',
+    );
+    row++;
+
+    // Good
+    _setCell(sheet, row, 0, '✓ Baik');
+    _setCell(sheet, row, 1, '80-89%');
+    _setCell(sheet, row, 2, performanceStats['good'].toString());
+    _setCell(
+      sheet,
+      row,
+      3,
+      totalSantri > 0
+          ? '${(performanceStats['good'] / totalSantri * 100).toStringAsFixed(1)}%'
+          : '0.0%',
+    );
+    row++;
+
+    // Fair
+    _setCell(sheet, row, 0, '○ Cukup');
+    _setCell(sheet, row, 1, '70-79%');
+    _setCell(sheet, row, 2, performanceStats['fair'].toString());
+    _setCell(
+      sheet,
+      row,
+      3,
+      totalSantri > 0
+          ? '${(performanceStats['fair'] / totalSantri * 100).toStringAsFixed(1)}%'
+          : '0.0%',
+    );
+    row++;
+
+    // Poor
+    _setCell(sheet, row, 0, '△ Kurang');
+    _setCell(sheet, row, 1, '60-69%');
+    _setCell(sheet, row, 2, performanceStats['poor'].toString());
+    _setCell(
+      sheet,
+      row,
+      3,
+      totalSantri > 0
+          ? '${(performanceStats['poor'] / totalSantri * 100).toStringAsFixed(1)}%'
+          : '0.0%',
+    );
+    row++;
+
+    // Critical
+    _setCell(sheet, row, 0, '✗ Perlu Perhatian');
+    _setCell(sheet, row, 1, '< 60%');
+    _setCell(sheet, row, 2, performanceStats['critical'].toString());
+    _setCell(
+      sheet,
+      row,
+      3,
+      totalSantri > 0
+          ? '${(performanceStats['critical'] / totalSantri * 100).toStringAsFixed(1)}%'
+          : '0.0%',
+    );
+    row += 2;
+
+    // === TOP 5 PERFORMERS ===
+    _setCell(sheet, row, 0, 'TOP 5 SANTRI TERBAIK', bold: true);
+    row++;
+
+    _setCell(sheet, row, 0, 'Peringkat', bold: true);
+    _setCell(sheet, row, 1, 'Nama', bold: true);
+    _setCell(sheet, row, 2, 'Tingkat Kehadiran', bold: true);
+    _setCell(sheet, row, 3, 'Total Presensi', bold: true);
+    row++;
+
+    for (int i = 0; i < topPerformers.length; i++) {
+      final performer = topPerformers[i] as Map<String, dynamic>;
+      final user = performer['user'] as UserModel;
+
+      _setCell(sheet, row, 0, '${i + 1}');
+      _setCell(sheet, row, 1, user.nama);
+      _setCell(
+        sheet,
+        row,
+        2,
+        '${(performer['attendanceRate'] as double).toStringAsFixed(1)}%',
+      );
+      _setCell(sheet, row, 3, performer['totalRecords'].toString());
+      row++;
+    }
+    row++;
+
+    // === BOTTOM 5 PERFORMERS ===
+    _setCell(sheet, row, 0, 'SANTRI YANG PERLU PERHATIAN', bold: true);
+    row++;
+
+    _setCell(sheet, row, 0, 'No', bold: true);
+    _setCell(sheet, row, 1, 'Nama', bold: true);
+    _setCell(sheet, row, 2, 'Tingkat Kehadiran', bold: true);
+    _setCell(sheet, row, 3, 'Total Presensi', bold: true);
+    row++;
+
+    for (int i = 0; i < bottomPerformers.length; i++) {
+      final performer = bottomPerformers[i] as Map<String, dynamic>;
+      final user = performer['user'] as UserModel;
+
+      _setCell(sheet, row, 0, '${i + 1}');
+      _setCell(sheet, row, 1, user.nama);
+      _setCell(
+        sheet,
+        row,
+        2,
+        '${(performer['attendanceRate'] as double).toStringAsFixed(1)}%',
+      );
+      _setCell(sheet, row, 3, performer['totalRecords'].toString());
+      row++;
+    }
+
+    // Set column widths
+    sheet.setColumnWidth(0, 12);
+    sheet.setColumnWidth(1, 30);
+    sheet.setColumnWidth(2, 18);
+    sheet.setColumnWidth(3, 15);
   }
 
   /// Buat sheet data agregat presensi

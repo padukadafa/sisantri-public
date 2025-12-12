@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:sisantri/core/theme/app_theme.dart';
-import 'package:sisantri/features/admin/attendance_management/presentation/pages/attendance_report_page_backup.dart';
+import 'package:sisantri/features/admin/attendance_management/presentation/pages/attendance_report_page.dart';
 import 'package:sisantri/features/santri/presensi/presentation/pages/presensi_page.dart';
 import 'package:sisantri/shared/models/presensi_model.dart';
 import 'package:sisantri/shared/models/user_model.dart';

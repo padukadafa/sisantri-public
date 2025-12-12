@@ -112,6 +112,17 @@ Map<String, dynamic> _calculateAttendanceStatisticsFromAggregates(
       : 0.0;
   final attendanceRate = rawAttendanceRate.clamp(0.0, 100.0);
 
+  // Statistik berdasarkan gender
+  int malePresentCount = 0;
+  int maleAbsentCount = 0;
+  int maleSickCount = 0;
+  int maleExcusedCount = 0;
+
+  int femalePresentCount = 0;
+  int femaleAbsentCount = 0;
+  int femaleSickCount = 0;
+  int femaleExcusedCount = 0;
+
   // Group by user for summary
   final userAttendanceSummary = <String, Map<String, dynamic>>{};
 
@@ -131,6 +142,24 @@ Map<String, dynamic> _calculateAttendanceStatisticsFromAggregates(
         : 0.0;
     final userAttendanceRate = rawUserAttendanceRate.clamp(0.0, 100.0);
 
+    // Hitung berdasarkan gender
+    final isMale =
+        user.jenisKelamin?.toLowerCase() == 'laki-laki' ||
+        user.jenisKelamin?.toLowerCase() == 'l' ||
+        user.jenisKelamin?.toLowerCase() == 'male';
+
+    if (isMale) {
+      malePresentCount += userPresent;
+      maleAbsentCount += userAbsent;
+      maleSickCount += userSick;
+      maleExcusedCount += userExcused;
+    } else if (user.jenisKelamin != null) {
+      femalePresentCount += userPresent;
+      femaleAbsentCount += userAbsent;
+      femaleSickCount += userSick;
+      femaleExcusedCount += userExcused;
+    }
+
     userAttendanceSummary[user.id] = {
       'user': user,
       'presentCount': userPresent,
@@ -140,8 +169,76 @@ Map<String, dynamic> _calculateAttendanceStatisticsFromAggregates(
       'totalRecords': userTotal,
       'attendanceRate': userAttendanceRate,
       'persentaseKehadiran': userAggregate?.persentaseKehadiran ?? 0.0,
+      'totalPoin': userAggregate?.totalPoin ?? 0,
     };
   }
+
+  // Hitung statistik gender
+  final maleTotal =
+      malePresentCount + maleAbsentCount + maleSickCount + maleExcusedCount;
+  final femaleTotal =
+      femalePresentCount +
+      femaleAbsentCount +
+      femaleSickCount +
+      femaleExcusedCount;
+
+  final maleAttendanceRate = maleTotal > 0
+      ? (malePresentCount / maleTotal * 100)
+      : 0.0;
+  final femaleAttendanceRate = femaleTotal > 0
+      ? (femalePresentCount / femaleTotal * 100)
+      : 0.0;
+
+  // Statistik performa
+  final excellentCount = userAttendanceSummary.values
+      .where((s) => (s['attendanceRate'] as double) >= 90)
+      .length;
+  final goodCount = userAttendanceSummary.values.where((s) {
+    final rate = s['attendanceRate'] as double;
+    return rate >= 80 && rate < 90;
+  }).length;
+  final fairCount = userAttendanceSummary.values.where((s) {
+    final rate = s['attendanceRate'] as double;
+    return rate >= 70 && rate < 80;
+  }).length;
+  final poorCount = userAttendanceSummary.values.where((s) {
+    final rate = s['attendanceRate'] as double;
+    return rate >= 60 && rate < 70;
+  }).length;
+  final criticalCount = userAttendanceSummary.values
+      .where((s) => (s['attendanceRate'] as double) < 60)
+      .length;
+
+  // Top performers
+  final sortedByRate = userAttendanceSummary.entries.toList()
+    ..sort(
+      (a, b) => (b.value['attendanceRate'] as double).compareTo(
+        a.value['attendanceRate'] as double,
+      ),
+    );
+
+  final topPerformers = sortedByRate
+      .take(5)
+      .map(
+        (e) => {
+          'user': e.value['user'],
+          'attendanceRate': e.value['attendanceRate'],
+          'totalRecords': e.value['totalRecords'],
+        },
+      )
+      .toList();
+
+  // Bottom performers
+  final bottomPerformers = sortedByRate.reversed
+      .take(5)
+      .map(
+        (e) => {
+          'user': e.value['user'],
+          'attendanceRate': e.value['attendanceRate'],
+          'totalRecords': e.value['totalRecords'],
+        },
+      )
+      .toList();
 
   return {
     'aggregates': aggregates,
@@ -155,7 +252,53 @@ Map<String, dynamic> _calculateAttendanceStatisticsFromAggregates(
       'sickCount': sickCount,
       'excusedCount': excusedCount,
       'attendanceRate': attendanceRate,
+      'totalSantri': users.length,
+      'totalPoin': aggregates.fold<int>(0, (sum, agg) => sum + agg.totalPoin),
     },
+    'genderStatistics': {
+      'male': {
+        'totalRecords': maleTotal,
+        'presentCount': malePresentCount,
+        'absentCount': maleAbsentCount,
+        'sickCount': maleSickCount,
+        'excusedCount': maleExcusedCount,
+        'attendanceRate': maleAttendanceRate.clamp(0.0, 100.0),
+        'count': users
+            .where(
+              (u) =>
+                  u.jenisKelamin?.toLowerCase() == 'laki-laki' ||
+                  u.jenisKelamin?.toLowerCase() == 'l' ||
+                  u.jenisKelamin?.toLowerCase() == 'male',
+            )
+            .length,
+      },
+      'female': {
+        'totalRecords': femaleTotal,
+        'presentCount': femalePresentCount,
+        'absentCount': femaleAbsentCount,
+        'sickCount': femaleSickCount,
+        'excusedCount': femaleExcusedCount,
+        'attendanceRate': femaleAttendanceRate.clamp(0.0, 100.0),
+        'count': users
+            .where(
+              (u) =>
+                  u.jenisKelamin != null &&
+                  u.jenisKelamin?.toLowerCase() != 'laki-laki' &&
+                  u.jenisKelamin?.toLowerCase() != 'l' &&
+                  u.jenisKelamin?.toLowerCase() != 'male',
+            )
+            .length,
+      },
+    },
+    'performanceStatistics': {
+      'excellent': excellentCount, // >= 90%
+      'good': goodCount, // 80-89%
+      'fair': fairCount, // 70-79%
+      'poor': poorCount, // 60-69%
+      'critical': criticalCount, // < 60%
+    },
+    'topPerformers': topPerformers,
+    'bottomPerformers': bottomPerformers,
     'userSummary': userAttendanceSummary,
   };
 }
