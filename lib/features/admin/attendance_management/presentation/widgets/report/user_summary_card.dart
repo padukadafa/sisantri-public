@@ -26,6 +26,7 @@ class _UserSummaryCardState extends State<UserSummaryCard> {
     final attendanceRate = widget.summary['attendanceRate'] as double;
     final totalRecords = widget.summary['totalRecords'] as int;
     final presentCount = widget.summary['presentCount'] as int;
+    final lateCount = widget.summary['lateCount'] as int? ?? 0;
     final absentCount = widget.summary['absentCount'] as int;
     final sickCount = widget.summary['sickCount'] as int;
     final excusedCount = widget.summary['excusedCount'] as int;
@@ -126,10 +127,16 @@ class _UserSummaryCardState extends State<UserSummaryCard> {
                     color: Colors.green,
                   ),
                   _StatusItem(
+                    label: 'Terlambat',
+                    count: lateCount,
+                    total: totalRecords,
+                    color: Colors.orange,
+                  ),
+                  _StatusItem(
                     label: 'Sakit',
                     count: sickCount,
                     total: totalRecords,
-                    color: Colors.orange,
+                    color: Colors.purple,
                   ),
                   _StatusItem(
                     label: 'Izin',

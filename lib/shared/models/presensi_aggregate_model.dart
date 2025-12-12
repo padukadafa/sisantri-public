@@ -8,6 +8,7 @@ class PresensiAggregateModel {
   final String
   periodeKey; // Format: YYYY-MM-DD, YYYY-Www, YYYY-MM, YYYY-S1/S2, YYYY
   final int totalHadir;
+  final int totalTerlambat;
   final int totalIzin;
   final int totalSakit;
   final int totalAlpha;
@@ -23,6 +24,7 @@ class PresensiAggregateModel {
     required this.periode,
     required this.periodeKey,
     required this.totalHadir,
+    required this.totalTerlambat,
     required this.totalIzin,
     required this.totalSakit,
     required this.totalAlpha,
@@ -33,11 +35,12 @@ class PresensiAggregateModel {
     this.detailPerJadwal,
   });
 
-  int get totalPresensi => totalHadir + totalIzin + totalSakit + totalAlpha;
+  int get totalPresensi =>
+      totalHadir + totalTerlambat + totalIzin + totalSakit + totalAlpha;
 
   double get persentaseKehadiran {
     if (totalPresensi == 0) return 0;
-    return (totalHadir / totalPresensi) * 100;
+    return ((totalHadir + totalTerlambat) / totalPresensi) * 100;
   }
 
   factory PresensiAggregateModel.fromJson(Map<String, dynamic> json) {
@@ -47,6 +50,7 @@ class PresensiAggregateModel {
       periode: json['periode'] as String,
       periodeKey: json['periodeKey'] as String,
       totalHadir: json['totalHadir'] as int? ?? 0,
+      totalTerlambat: json['totalTerlambat'] as int? ?? 0,
       totalIzin: json['totalIzin'] as int? ?? 0,
       totalSakit: json['totalSakit'] as int? ?? 0,
       totalAlpha: json['totalAlpha'] as int? ?? 0,
@@ -67,6 +71,7 @@ class PresensiAggregateModel {
       'periode': periode,
       'periodeKey': periodeKey,
       'totalHadir': totalHadir,
+      'totalTerlambat': totalTerlambat,
       'totalIzin': totalIzin,
       'totalSakit': totalSakit,
       'totalAlpha': totalAlpha,
@@ -84,6 +89,7 @@ class PresensiAggregateModel {
     String? periode,
     String? periodeKey,
     int? totalHadir,
+    int? totalTerlambat,
     int? totalIzin,
     int? totalSakit,
     int? totalAlpha,
@@ -99,6 +105,7 @@ class PresensiAggregateModel {
       periode: periode ?? this.periode,
       periodeKey: periodeKey ?? this.periodeKey,
       totalHadir: totalHadir ?? this.totalHadir,
+      totalTerlambat: totalTerlambat ?? this.totalTerlambat,
       totalIzin: totalIzin ?? this.totalIzin,
       totalSakit: totalSakit ?? this.totalSakit,
       totalAlpha: totalAlpha ?? this.totalAlpha,

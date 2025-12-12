@@ -105,19 +105,21 @@ final attendanceReportProvider =
 
         // Hitung statistik global dari aggregate
         int presentCount = 0;
+        int lateCount = 0;
         int absentCount = 0;
         int sickCount = 0;
         int excusedCount = 0;
 
         for (final agg in filteredAggregates) {
           presentCount += agg.totalHadir;
+          lateCount += agg.totalTerlambat;
           absentCount += agg.totalAlpha;
           sickCount += agg.totalSakit;
           excusedCount += agg.totalIzin;
         }
 
         final totalRecords =
-            presentCount + absentCount + sickCount + excusedCount;
+            presentCount + lateCount + absentCount + sickCount + excusedCount;
         final rawAttendanceRate = totalRecords > 0
             ? (presentCount / totalRecords * 100)
             : 0.0;
@@ -132,11 +134,13 @@ final attendanceReportProvider =
               .firstOrNull;
 
           final userPresent = userAggregate?.totalHadir ?? 0;
+          final userLate = userAggregate?.totalTerlambat ?? 0;
           final userAbsent = userAggregate?.totalAlpha ?? 0;
           final userSick = userAggregate?.totalSakit ?? 0;
           final userExcused = userAggregate?.totalIzin ?? 0;
 
-          final userTotal = userPresent + userAbsent + userSick + userExcused;
+          final userTotal =
+              userPresent + userLate + userAbsent + userSick + userExcused;
           final rawUserAttendanceRate = userTotal > 0
               ? (userPresent / userTotal * 100)
               : 0.0;
@@ -146,6 +150,7 @@ final attendanceReportProvider =
             'user': user,
             'totalRecords': userTotal,
             'presentCount': userPresent,
+            'lateCount': userLate,
             'absentCount': userAbsent,
             'sickCount': userSick,
             'excusedCount': userExcused,
@@ -161,6 +166,7 @@ final attendanceReportProvider =
           'statistics': {
             'totalRecords': totalRecords,
             'presentCount': presentCount,
+            'lateCount': lateCount,
             'absentCount': absentCount,
             'sickCount': sickCount,
             'excusedCount': excusedCount,

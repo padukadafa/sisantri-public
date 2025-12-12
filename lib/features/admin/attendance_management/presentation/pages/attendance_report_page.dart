@@ -10,6 +10,7 @@ import '../widgets/report/excel_export_service.dart';
 import '../widgets/report/gender_statistics_card.dart';
 import '../widgets/report/performance_distribution_card.dart';
 import '../widgets/report/performers_card.dart';
+import 'santri_report_list_page.dart';
 
 /// Halaman Laporan Presensi
 class AttendanceReportPage extends ConsumerStatefulWidget {
@@ -122,6 +123,18 @@ class _AttendanceReportPageState extends ConsumerState<AttendanceReportPage>
       appBar: AppBar(
         title: const Text('Laporan Presensi'),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.person_search),
+            tooltip: 'Laporan Per Santri',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SantriReportListPage(),
+                ),
+              );
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.filter_list),
             onPressed: () => _showFilterBottomSheet(context),

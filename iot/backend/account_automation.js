@@ -296,4 +296,92 @@ async function fixPoint() {
     console.log(`Updated poin for user ${userId}: ${userDoc.data().poin}`);
   }
 }
-fixPoint();
+async function fixPresensi() {
+  const usersSnapshot = await firestore.collection("users").get();
+  for (const userDoc of usersSnapshot.docs) {
+    const userId = userDoc.id;
+    if (userDoc.data().role !== "santri") {
+      continue;
+    }
+    const presensiSnapshot = await firestore
+      .collection("presensi")
+      .where("userId", "==", userId)
+      .get();
+
+    for (const presensiDoc of presensiSnapshot.docs) {
+      const presensiData = presensiDoc.data();
+      await firestore
+        .collection("presensi_aggregates")
+        .where("userId", "==", userId)
+        .where("periode", "==", "daily")
+        .get()
+        .then(async (aggregateSnapshot) => {
+          for (const aggregateDoc of aggregateSnapshot.docs) {
+            const aggregateData = aggregateDoc.data();
+            const totalPoin = aggregateData.totalAlpha || 0;
+            const totalAlpha = presensiData.status === "hadir";
+            const totalSakit = aggregateData.totalSakit || 0;
+            const totalIzin = aggregateData.totalIzin || 0;
+            const totalHadir = aggregateData.totalHadir || 0;
+            await firestore
+              .collection("presensi_aggregates")
+              .doc(aggregateDoc.id)
+              .update({
+                totalPoin,
+                totalAlpha,
+                totalSakit,
+                totalIzin,
+                totalHadir,
+              });
+            console.log(
+              `Updated aggregate ${aggregateDoc.id} for user ${userId}`
+            );
+          }
+        });
+    }
+    await firestore
+      .collection("presensi_aggregates")
+      .doc(`${userId}_monthly_2025-12`)
+      .update({
+        totalPoin: userDoc.data().poin || 0,
+      });
+    await firestore
+      .collection("presensi_aggregates")
+      .doc(`${userId}_yearly_2025`)
+      .update({
+        totalPoin: userDoc.data().poin || 0,
+      });
+    await firestore
+      .collection("presensi_aggregates")
+      .doc(`${userId}_semester_2025-S2`)
+      .update({
+        totalPoin: userDoc.data().poin || 0,
+      });
+
+    console.log(`Updated poin for user ${userId}: ${userDoc.data().poin}`);
+  }
+}
+async function fixWeekly() {
+  const aggregates = firestore.collection("presensi_aggregates");
+  const snapshot = await aggregates
+    .where("periode", "==", "weekly")
+    .where("periodeKey", "==", "2025-W50")
+    .get();
+
+  for (const doc of snapshot.docs) {
+    const data = doc.data();
+    if (
+      data.totalAlpha + data.totalHadir + data.totalIzin + data.totalSakit >
+      9
+    ) {
+      await aggregates.doc(doc.id).update({
+        totalAlpha: 9 - (data.totalHadir + data.totalIzin + data.totalSakit),
+      });
+      console.log(`Updated ${doc.id}`);
+    }
+    await aggregates.doc(doc.id).update({
+      totalPoin: data.totalHadir,
+    });
+  }
+}
+fixWeekly();
