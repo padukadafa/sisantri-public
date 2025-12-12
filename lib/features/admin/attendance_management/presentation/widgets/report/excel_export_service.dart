@@ -5,7 +5,7 @@ import 'package:open_file/open_file.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import 'package:sisantri/shared/models/presensi_model.dart';
+import 'package:sisantri/shared/models/presensi_aggregate_model.dart';
 import 'package:sisantri/shared/models/user_model.dart';
 import 'attendance_report_provider.dart';
 
@@ -45,19 +45,20 @@ class ExcelExportService {
     final excel = excel_lib.Excel.createExcel();
 
     final statistics = reportData['statistics'] as Map<String, dynamic>;
-    final attendanceRecords =
-        reportData['attendanceRecords'] as List<PresensiModel>;
+    final aggregates = reportData['aggregates'] as List<PresensiAggregateModel>;
     final users = reportData['users'] as List<UserModel>;
     final userSummary =
         reportData['userSummary'] as Map<String, Map<String, dynamic>>;
+    final periode = reportData['periode'] as String;
+    final periodeKey = reportData['periodeKey'] as String;
 
     // Buat sheets
     final summarySheet = excel['Ringkasan'];
-    final detailSheet = excel['Detail'];
+    final aggregateSheet = excel['Data Agregat'];
     final santriSheet = excel['Per Santri'];
 
-    _createSummarySheet(summarySheet, statistics, filter);
-    _createDetailSheet(detailSheet, attendanceRecords, users);
+    _createSummarySheet(summarySheet, statistics, filter, periode, periodeKey);
+    _createAggregateSheet(aggregateSheet, aggregates, users);
     _createSantriSummarySheet(santriSheet, userSummary);
 
     // Tentukan directory untuk menyimpan file
@@ -119,6 +120,8 @@ class ExcelExportService {
     excel_lib.Sheet sheet,
     Map<String, dynamic> stats,
     AttendanceReportFilter filter,
+    String periode,
+    String periodeKey,
   ) {
     int row = 0;
 
@@ -148,6 +151,14 @@ class ExcelExportService {
     } else {
       _setCell(sheet, row, 1, 'Semua Data');
     }
+    row++;
+
+    _setCell(sheet, row, 0, 'Tipe Periode:', bold: true);
+    _setCell(sheet, row, 1, periode);
+    row++;
+
+    _setCell(sheet, row, 0, 'Periode Key:', bold: true);
+    _setCell(sheet, row, 1, periodeKey);
     row++;
 
     if (filter.status != null) {
@@ -243,83 +254,73 @@ class ExcelExportService {
     sheet.setColumnWidth(2, 15);
   }
 
-  /// Buat sheet detail presensi harian
-  static void _createDetailSheet(
+  /// Buat sheet data agregat presensi
+  static void _createAggregateSheet(
     excel_lib.Sheet sheet,
-    List<PresensiModel> records,
+    List<PresensiAggregateModel> aggregates,
     List<UserModel> users,
   ) {
     int row = 0;
 
     // === HEADER ===
-    _setCell(sheet, row, 0, 'DETAIL PRESENSI HARIAN', bold: true);
+    _setCell(sheet, row, 0, 'DATA AGREGAT PRESENSI', bold: true);
     row++;
-    _setCell(sheet, row, 0, 'Total ${records.length} record presensi');
+    _setCell(sheet, row, 0, 'Total ${aggregates.length} data agregat');
     row += 2;
 
     // === TABLE HEADERS ===
     _setCell(sheet, row, 0, 'No', bold: true);
     _setCell(sheet, row, 1, 'Nama Santri', bold: true);
-    _setCell(sheet, row, 2, 'Tanggal', bold: true);
-    _setCell(sheet, row, 3, 'Hari', bold: true);
-    _setCell(sheet, row, 4, 'Jam', bold: true);
-    _setCell(sheet, row, 5, 'Status', bold: true);
-    _setCell(sheet, row, 6, 'Keterangan', bold: true);
+    _setCell(sheet, row, 2, 'Periode', bold: true);
+    _setCell(sheet, row, 3, 'Hadir', bold: true);
+    _setCell(sheet, row, 4, 'Izin', bold: true);
+    _setCell(sheet, row, 5, 'Sakit', bold: true);
+    _setCell(sheet, row, 6, 'Alpha', bold: true);
+    _setCell(sheet, row, 7, 'Total', bold: true);
+    _setCell(sheet, row, 8, 'Kehadiran %', bold: true);
+    _setCell(sheet, row, 9, 'Total Poin', bold: true);
     row++;
 
     // === DATA ROWS ===
-    for (int i = 0; i < records.length; i++) {
-      final record = records[i];
+    for (int i = 0; i < aggregates.length; i++) {
+      final agg = aggregates[i];
       final user = users.firstWhere(
-        (u) => u.id == record.userId,
+        (u) => u.id == agg.userId,
         orElse: () =>
             UserModel(id: '', nama: 'Unknown', email: '', role: 'santri'),
       );
 
+      final total =
+          agg.totalHadir + agg.totalIzin + agg.totalSakit + agg.totalAlpha;
+
       _setCell(sheet, row, 0, (i + 1).toString());
       _setCell(sheet, row, 1, user.nama);
-      _setCell(
-        sheet,
-        row,
-        2,
-        DateFormat('dd/MM/yyyy').format(record.createdAt),
-      );
-      _setCell(
-        sheet,
-        row,
-        3,
-        DateFormat('EEEE', 'id_ID').format(record.createdAt),
-      );
-      _setCell(
-        sheet,
-        row,
-        4,
-        record.timestamp != null
-            ? DateFormat('HH:mm:ss').format(record.timestamp!)
-            : '-',
-      );
-      _setCell(sheet, row, 5, record.status.label);
-      _setCell(
-        sheet,
-        row,
-        6,
-        record.keterangan.isEmpty ? '-' : record.keterangan,
-      );
+      _setCell(sheet, row, 2, '${agg.periode} - ${agg.periodeKey}');
+      _setCell(sheet, row, 3, agg.totalHadir.toString());
+      _setCell(sheet, row, 4, agg.totalIzin.toString());
+      _setCell(sheet, row, 5, agg.totalSakit.toString());
+      _setCell(sheet, row, 6, agg.totalAlpha.toString());
+      _setCell(sheet, row, 7, total.toString());
+      _setCell(sheet, row, 8, '${agg.persentaseKehadiran.toStringAsFixed(1)}%');
+      _setCell(sheet, row, 9, agg.totalPoin.toString());
 
       row++;
     }
 
     // Set column widths
-    sheet.setColumnWidth(0, 8);
-    sheet.setColumnWidth(1, 30);
-    sheet.setColumnWidth(2, 15);
-    sheet.setColumnWidth(3, 12);
-    sheet.setColumnWidth(4, 12);
-    sheet.setColumnWidth(5, 12);
-    sheet.setColumnWidth(6, 35);
+    sheet.setColumnWidth(0, 5);
+    sheet.setColumnWidth(1, 25);
+    sheet.setColumnWidth(2, 20);
+    sheet.setColumnWidth(3, 10);
+    sheet.setColumnWidth(4, 10);
+    sheet.setColumnWidth(5, 10);
+    sheet.setColumnWidth(6, 10);
+    sheet.setColumnWidth(7, 10);
+    sheet.setColumnWidth(8, 12);
+    sheet.setColumnWidth(9, 12);
   }
 
-  /// Buat sheet ringkasan per santri dengan kategori performa
+  /// Buat sheet ringkasan per santri
   static void _createSantriSummarySheet(
     excel_lib.Sheet sheet,
     Map<String, Map<String, dynamic>> userSummary,
@@ -327,7 +328,7 @@ class ExcelExportService {
     int row = 0;
 
     // === HEADER ===
-    _setCell(sheet, row, 0, 'RINGKASAN PRESENSI PER SANTRI', bold: true);
+    _setCell(sheet, row, 0, 'RINGKASAN PER SANTRI', bold: true);
     row++;
     _setCell(sheet, row, 0, 'Total ${userSummary.length} santri');
     row += 2;
@@ -335,105 +336,47 @@ class ExcelExportService {
     // === TABLE HEADERS ===
     _setCell(sheet, row, 0, 'No', bold: true);
     _setCell(sheet, row, 1, 'Nama Santri', bold: true);
-    _setCell(sheet, row, 2, 'Total Presensi', bold: true);
-    _setCell(sheet, row, 3, 'Hadir', bold: true);
+    _setCell(sheet, row, 2, 'Hadir', bold: true);
+    _setCell(sheet, row, 3, 'Izin', bold: true);
     _setCell(sheet, row, 4, 'Sakit', bold: true);
-    _setCell(sheet, row, 5, 'Izin', bold: true);
-    _setCell(sheet, row, 6, 'Alpha', bold: true);
+    _setCell(sheet, row, 5, 'Alpha', bold: true);
+    _setCell(sheet, row, 6, 'Total', bold: true);
     _setCell(sheet, row, 7, 'Tingkat Kehadiran', bold: true);
-    _setCell(sheet, row, 8, 'Kategori', bold: true);
     row++;
-
-    // Sort by attendance rate (descending)
-    final sortedEntries = userSummary.entries.toList()
-      ..sort((a, b) {
-        final rateA = a.value['attendanceRate'] as double;
-        final rateB = b.value['attendanceRate'] as double;
-        return rateB.compareTo(rateA);
-      });
 
     // === DATA ROWS ===
     int no = 1;
-    for (final entry in sortedEntries) {
+    for (final entry in userSummary.entries) {
       final summary = entry.value;
       final user = summary['user'] as UserModel;
-      final attendanceRate = summary['attendanceRate'] as double;
-
-      // Tentukan kategori
-      String kategori;
-      if (attendanceRate >= 90) {
-        kategori = '⭐ Excellent';
-      } else if (attendanceRate >= 80) {
-        kategori = '✓ Baik';
-      } else if (attendanceRate >= 70) {
-        kategori = '○ Cukup';
-      } else if (attendanceRate >= 60) {
-        kategori = '△ Kurang';
-      } else {
-        kategori = '✗ Perlu Perhatian';
-      }
 
       _setCell(sheet, row, 0, no.toString());
       _setCell(sheet, row, 1, user.nama);
-      _setCell(sheet, row, 2, summary['totalRecords'].toString());
-      _setCell(sheet, row, 3, summary['presentCount'].toString());
+      _setCell(sheet, row, 2, summary['presentCount'].toString());
+      _setCell(sheet, row, 3, summary['excusedCount'].toString());
       _setCell(sheet, row, 4, summary['sickCount'].toString());
-      _setCell(sheet, row, 5, summary['excusedCount'].toString());
-      _setCell(sheet, row, 6, summary['absentCount'].toString());
+      _setCell(sheet, row, 5, summary['absentCount'].toString());
+      _setCell(sheet, row, 6, summary['totalRecords'].toString());
       _setCell(
         sheet,
         row,
         7,
-        '${attendanceRate.toStringAsFixed(1)}%',
-        bold: true,
+        '${summary['attendanceRate'].toStringAsFixed(1)}%',
       );
-      _setCell(sheet, row, 8, kategori);
 
       row++;
       no++;
     }
 
-    // === FOOTER SUMMARY ===
-    row++;
-    _setCell(sheet, row, 0, 'RINGKASAN', bold: true);
-
-    // Hitung total
-    int totalAllRecords = 0;
-    int totalAllPresent = 0;
-    int totalAllSick = 0;
-    int totalAllExcused = 0;
-    int totalAllAbsent = 0;
-
-    for (final entry in userSummary.entries) {
-      final summary = entry.value;
-      totalAllRecords += summary['totalRecords'] as int;
-      totalAllPresent += summary['presentCount'] as int;
-      totalAllSick += summary['sickCount'] as int;
-      totalAllExcused += summary['excusedCount'] as int;
-      totalAllAbsent += summary['absentCount'] as int;
-    }
-
-    final overallRate = totalAllRecords > 0
-        ? (totalAllPresent / totalAllRecords * 100)
-        : 0.0;
-
-    _setCell(sheet, row, 2, totalAllRecords.toString(), bold: true);
-    _setCell(sheet, row, 3, totalAllPresent.toString(), bold: true);
-    _setCell(sheet, row, 4, totalAllSick.toString(), bold: true);
-    _setCell(sheet, row, 5, totalAllExcused.toString(), bold: true);
-    _setCell(sheet, row, 6, totalAllAbsent.toString(), bold: true);
-    _setCell(sheet, row, 7, '${overallRate.toStringAsFixed(1)}%', bold: true);
-
     // Set column widths
     sheet.setColumnWidth(0, 6);
     sheet.setColumnWidth(1, 30);
-    sheet.setColumnWidth(2, 12);
+    sheet.setColumnWidth(2, 10);
     sheet.setColumnWidth(3, 10);
     sheet.setColumnWidth(4, 10);
     sheet.setColumnWidth(5, 10);
     sheet.setColumnWidth(6, 10);
     sheet.setColumnWidth(7, 16);
-    sheet.setColumnWidth(8, 18);
   }
 
   /// Helper method untuk set cell value dengan styling sederhana

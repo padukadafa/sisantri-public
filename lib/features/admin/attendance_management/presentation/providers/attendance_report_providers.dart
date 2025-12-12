@@ -2,10 +2,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 import 'package:sisantri/shared/models/user_model.dart';
-import 'package:sisantri/shared/models/presensi_model.dart';
+import 'package:sisantri/shared/models/presensi_aggregate_model.dart';
 import 'package:sisantri/features/admin/attendance_management/data/attendance_report_filter.dart';
 
-/// Provider untuk data laporan presensi
+/// Provider untuk data laporan presensi menggunakan Aggregate
 final attendanceReportProvider =
     FutureProvider.family<Map<String, dynamic>, AttendanceReportFilter>((
       ref,
@@ -21,63 +21,62 @@ final attendanceReportProvider =
             .where((user) => user.isSantri)
             .toList();
 
-        // Build attendance query with proper date filtering
-        Query attendanceQuery = firestore.collection('presensi');
+        // Tentukan periode berdasarkan filter
+        String periode;
+        String periodeKey;
 
-        // Apply date filter to attendance records
-        if (filter.startDate != null) {
-          attendanceQuery = attendanceQuery.where(
-            'timestamp',
-            isGreaterThanOrEqualTo: Timestamp.fromDate(filter.startDate!),
-          );
+        if (filter.startDate != null && filter.endDate != null) {
+          final diff = filter.endDate!.difference(filter.startDate!).inDays;
+
+          if (diff <= 1) {
+            periode = 'daily';
+            periodeKey = PeriodeKeyHelper.daily(filter.startDate!);
+          } else if (diff <= 7) {
+            periode = 'weekly';
+            periodeKey = PeriodeKeyHelper.weekly(filter.startDate!);
+          } else if (diff <= 31) {
+            periode = 'monthly';
+            periodeKey = PeriodeKeyHelper.monthly(filter.startDate!);
+          } else if (diff <= 180) {
+            periode = 'semester';
+            periodeKey = PeriodeKeyHelper.semester(filter.startDate!);
+          } else {
+            periode = 'yearly';
+            periodeKey = PeriodeKeyHelper.yearly(filter.startDate!);
+          }
+        } else {
+          periode = 'monthly';
+          periodeKey = PeriodeKeyHelper.monthly(DateTime.now());
         }
-        if (filter.endDate != null) {
-          final endOfDay = DateTime(
-            filter.endDate!.year,
-            filter.endDate!.month,
-            filter.endDate!.day,
-            23,
-            59,
-            59,
-          );
-          attendanceQuery = attendanceQuery.where(
-            'timestamp',
-            isLessThanOrEqualTo: Timestamp.fromDate(endOfDay),
-          );
-        }
+
+        // Build aggregate query
+        Query aggregateQuery = firestore
+            .collection('presensi_aggregates')
+            .where('periode', isEqualTo: periode)
+            .where('periodeKey', isEqualTo: periodeKey);
 
         // Apply user filter
         if (filter.userId != null) {
-          attendanceQuery = attendanceQuery.where(
+          aggregateQuery = aggregateQuery.where(
             'userId',
             isEqualTo: filter.userId,
           );
         }
 
-        // Apply status filter
-        if (filter.status != null) {
-          attendanceQuery = attendanceQuery.where(
-            'status',
-            isEqualTo: filter.status,
-          );
-        }
+        final aggregateSnapshot = await aggregateQuery.get();
 
-        final attendanceSnapshot = await attendanceQuery.get();
+        // Parse to PresensiAggregateModel
+        final aggregates = aggregateSnapshot.docs.map((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          return PresensiAggregateModel.fromJson({'id': doc.id, ...data});
+        }).toList();
 
-        // Parse to PresensiModel
-        final attendanceRecords = <PresensiModel>[];
-        for (var doc in attendanceSnapshot.docs) {
-          try {
-            final data = doc.data() as Map<String, dynamic>;
-            final record = PresensiModel.fromJson({'id': doc.id, ...data});
-            attendanceRecords.add(record);
-          } catch (e) {
-            // Skip invalid records
-            continue;
-          }
-        }
-
-        return _calculateAttendanceStatistics(attendanceRecords, users);
+        return _calculateAttendanceStatisticsFromAggregates(
+          aggregates,
+          users,
+          periode,
+          periodeKey,
+        );
       } catch (e) {
         throw Exception('Failed to fetch attendance report: $e');
       }
@@ -88,30 +87,28 @@ final attendanceFilterProvider = StateProvider<AttendanceReportFilter>((ref) {
   return const AttendanceReportFilter();
 });
 
-Map<String, dynamic> _calculateAttendanceStatistics(
-  List<PresensiModel> attendanceRecords,
+Map<String, dynamic> _calculateAttendanceStatisticsFromAggregates(
+  List<PresensiAggregateModel> aggregates,
   List<UserModel> users,
+  String periode,
+  String periodeKey,
 ) {
-  // Calculate statistics
-  final presentCount = attendanceRecords
-      .where((a) => a.status == StatusPresensi.hadir)
-      .length;
+  // Calculate statistics from aggregates
+  int presentCount = 0;
+  int absentCount = 0;
+  int sickCount = 0;
+  int excusedCount = 0;
 
-  final absentCount = attendanceRecords
-      .where((a) => a.status == StatusPresensi.alpha)
-      .length;
+  for (final agg in aggregates) {
+    presentCount += agg.totalHadir;
+    absentCount += agg.totalAlpha;
+    sickCount += agg.totalSakit;
+    excusedCount += agg.totalIzin;
+  }
 
-  final sickCount = attendanceRecords
-      .where((a) => a.status == StatusPresensi.sakit)
-      .length;
-
-  final excusedCount = attendanceRecords
-      .where((a) => a.status == StatusPresensi.izin)
-      .length;
-
-  final totalExpectedAttendance = attendanceRecords.length;
-  final rawAttendanceRate = totalExpectedAttendance > 0
-      ? (presentCount / totalExpectedAttendance * 100)
+  final totalRecords = presentCount + absentCount + sickCount + excusedCount;
+  final rawAttendanceRate = totalRecords > 0
+      ? (presentCount / totalRecords * 100)
       : 0.0;
   final attendanceRate = rawAttendanceRate.clamp(0.0, 100.0);
 
@@ -119,49 +116,46 @@ Map<String, dynamic> _calculateAttendanceStatistics(
   final userAttendanceSummary = <String, Map<String, dynamic>>{};
 
   for (final user in users) {
-    final userRecords = attendanceRecords
-        .where((a) => a.userId == user.id)
-        .toList();
+    final userAggregate = aggregates
+        .where((agg) => agg.userId == user.id)
+        .firstOrNull;
 
-    final userPresent = userRecords
-        .where((a) => a.status == StatusPresensi.hadir)
-        .length;
-    final userAbsent = userRecords
-        .where((a) => a.status == StatusPresensi.alpha)
-        .length;
-    final userSick = userRecords
-        .where((a) => a.status == StatusPresensi.sakit)
-        .length;
-    final userExcused = userRecords
-        .where((a) => a.status == StatusPresensi.izin)
-        .length;
+    final userPresent = userAggregate?.totalHadir ?? 0;
+    final userAbsent = userAggregate?.totalAlpha ?? 0;
+    final userSick = userAggregate?.totalSakit ?? 0;
+    final userExcused = userAggregate?.totalIzin ?? 0;
 
-    final userExpectedTotal = userRecords.length;
-    final rawUserAttendanceRate = userExpectedTotal > 0
-        ? ((userPresent + userSick + userExcused) / userExpectedTotal * 100)
+    final userTotal = userPresent + userAbsent + userSick + userExcused;
+    final rawUserAttendanceRate = userTotal > 0
+        ? (userPresent / userTotal * 100)
         : 0.0;
+    final userAttendanceRate = rawUserAttendanceRate.clamp(0.0, 100.0);
 
     userAttendanceSummary[user.id] = {
       'user': user,
-      'present': userPresent,
-      'absent': userAbsent,
-      'sick': userSick,
-      'excused': userExcused,
-      'total': userExpectedTotal,
-      'attendanceRate': rawUserAttendanceRate.clamp(0.0, 100.0),
-      'records': userRecords,
+      'presentCount': userPresent,
+      'absentCount': userAbsent,
+      'sickCount': userSick,
+      'excusedCount': userExcused,
+      'totalRecords': userTotal,
+      'attendanceRate': userAttendanceRate,
+      'persentaseKehadiran': userAggregate?.persentaseKehadiran ?? 0.0,
     };
   }
 
   return {
-    'attendanceRecords': attendanceRecords,
+    'aggregates': aggregates,
     'users': users,
-    'presentCount': presentCount,
-    'absentCount': absentCount,
-    'sickCount': sickCount,
-    'excusedCount': excusedCount,
-    'totalExpectedAttendance': totalExpectedAttendance,
-    'attendanceRate': attendanceRate,
-    'userAttendanceSummary': userAttendanceSummary,
+    'periode': periode,
+    'periodeKey': periodeKey,
+    'statistics': {
+      'totalRecords': totalRecords,
+      'presentCount': presentCount,
+      'absentCount': absentCount,
+      'sickCount': sickCount,
+      'excusedCount': excusedCount,
+      'attendanceRate': attendanceRate,
+    },
+    'userSummary': userAttendanceSummary,
   };
 }

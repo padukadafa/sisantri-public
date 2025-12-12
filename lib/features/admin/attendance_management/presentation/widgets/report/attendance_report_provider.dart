@@ -2,10 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:sisantri/shared/models/user_model.dart';
-import 'package:sisantri/shared/models/presensi_model.dart';
 import 'package:sisantri/shared/models/presensi_aggregate_model.dart';
-import 'package:sisantri/shared/services/presensi_service.dart';
-import 'package:sisantri/shared/services/presensi_aggregate_service.dart';
 
 /// Filter untuk laporan presensi
 class AttendanceReportFilter {
@@ -77,7 +74,6 @@ final attendanceReportProvider =
             periodeKey = PeriodeKeyHelper.yearly(filter.startDate!);
           }
         } else {
-          // Default: bulan ini
           periode = 'monthly';
           periodeKey = PeriodeKeyHelper.monthly(DateTime.now());
         }
@@ -157,25 +153,7 @@ final attendanceReportProvider =
           };
         }
 
-        // Untuk backward compatibility, jika perlu detail records
-        // tetap ambil dari PresensiService (optional)
-        List<PresensiModel> attendanceRecords = [];
-        if (filter.startDate != null && filter.endDate != null) {
-          attendanceRecords = await PresensiService.getPresensiByPeriod(
-            startDate: filter.startDate!,
-            endDate: filter.endDate!,
-            userId: filter.userId,
-          );
-
-          if (filter.status != null) {
-            attendanceRecords = attendanceRecords
-                .where((record) => record.status.name == filter.status)
-                .toList();
-          }
-        }
-
         return {
-          'attendanceRecords': attendanceRecords,
           'aggregates': filteredAggregates,
           'users': users,
           'periode': periode,
