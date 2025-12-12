@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sisantri/shared/helpers/messaging_helper.dart';
 import 'package:sisantri/shared/models/jadwal_model.dart';
 import 'package:sisantri/shared/services/attendance_service.dart';
+import 'package:sisantri/shared/services/reminder_service.dart';
 import 'package:sisantri/core/theme/app_theme.dart';
 
 import '../widgets/form_sections/basic_info_form_section.dart';
@@ -352,6 +353,14 @@ class _AddEditJadwalPageNewState extends ConsumerState<AddEditJadwalPage> {
         await _addJadwal(jadwal);
       } else {
         await _updateJadwal(jadwal);
+      }
+
+      // Refresh reminders untuk semua user setelah add/update jadwal
+      try {
+        await ReminderService.refreshReminders();
+      } catch (e) {
+        // Silent fail - tidak mengganggu proses save
+        debugPrint('Warning: Failed to refresh reminders: $e');
       }
 
       if (mounted) {

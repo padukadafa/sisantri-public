@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sisantri/core/theme/app_theme.dart';
 import 'package:sisantri/shared/models/jadwal_model.dart';
 import 'package:sisantri/shared/models/presensi_aggregate_model.dart';
+import 'package:sisantri/shared/services/reminder_service.dart';
 
 import '../providers/schedule_providers.dart';
 import '../widgets/schedule_filter_menu.dart';
@@ -276,6 +277,14 @@ class ScheduleManagementPage extends ConsumerWidget {
         }
       }
       await aggregateBatch.commit();
+
+      // Refresh reminders setelah delete jadwal
+      try {
+        await ReminderService.refreshReminders();
+      } catch (e) {
+        // Silent fail
+        debugPrint('Warning: Failed to refresh reminders: $e');
+      }
 
       ref.invalidate(jadwalProvider);
 

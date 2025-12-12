@@ -8,6 +8,7 @@ import 'package:sisantri/shared/widgets/logout_button.dart';
 import 'package:sisantri/shared/widgets/level_progress_card.dart';
 import 'package:sisantri/features/santri/profile/presentation/pages/edit_profile_page.dart';
 import 'package:sisantri/features/santri/profile/presentation/pages/security_settings_page.dart';
+import 'package:sisantri/features/santri/profile/presentation/pages/reminder_settings_page.dart';
 
 final userProfileProvider = FutureProvider<UserModel?>((ref) async {
   final currentUser = AuthService.currentUser;
@@ -382,6 +383,20 @@ class ProfilePage extends ConsumerWidget {
             },
           ),
           const Divider(height: 1),
+          const Divider(height: 1),
+          _buildMenuItem(
+            icon: Icons.notifications_active,
+            title: 'Pengaturan Pengingat',
+            subtitle: 'Atur pengingat sholat dan jadwal',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const ReminderSettingsPage(),
+                ),
+              );
+            },
+          ),
           const Divider(height: 1),
           _buildMenuItem(
             icon: Icons.security_outlined,

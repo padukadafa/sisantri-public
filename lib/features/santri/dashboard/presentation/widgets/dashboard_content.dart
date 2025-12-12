@@ -14,6 +14,7 @@ import 'dashboard_notifications_section.dart';
 import 'dashboard_stats_cards.dart';
 import 'dashboard_additional_stats.dart';
 import 'dashboard_recent_pengumuman.dart';
+import 'prayer_times_widget.dart';
 
 class DashboardContent extends StatelessWidget {
   final Map<String, dynamic> data;
@@ -38,6 +39,7 @@ class DashboardContent extends StatelessWidget {
           children: [
             const DashboardNotificationsSection(),
             const SizedBox(height: 20),
+
             // Level Progress Card
             if (user?.id != null)
               FutureBuilder<int>(
@@ -59,7 +61,7 @@ class DashboardContent extends StatelessWidget {
                   );
                 },
               ),
-            DashboardStatsCards(user: user, todayPresensi: todayPresensi),
+            const PrayerTimesCard(),
             const SizedBox(height: 20),
             const DashboardAdditionalStats(),
             const SizedBox(height: 24),

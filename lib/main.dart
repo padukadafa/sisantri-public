@@ -10,6 +10,8 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'core/theme/app_theme.dart';
 import 'features/shared/auth/presentation/pages/auth_wrapper.dart';
 import 'shared/services/notification_service.dart';
+import 'shared/services/reminder_service.dart';
+import 'shared/widgets/reminder_lifecycle_manager.dart';
 import 'firebase_options.dart';
 
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -39,6 +41,13 @@ void main() async {
     try {
       await NotificationService.initialize();
     } catch (e) {}
+
+    // Initialize reminder service untuk pengingat sholat dan jadwal
+    try {
+      await ReminderService.initialize();
+    } catch (e) {
+      // Silently fail if reminder initialization fails
+    }
   } catch (e) {}
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.portraitUp,
@@ -71,12 +80,14 @@ class SiSantriApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Si Santri',
-      theme: AppTheme.lightTheme,
-      debugShowCheckedModeBanner: false,
-      home: const AuthWrapper(),
-      builder: EasyLoading.init(),
+    return ReminderLifecycleManager(
+      child: MaterialApp(
+        title: 'Si Santri',
+        theme: AppTheme.lightTheme,
+        debugShowCheckedModeBanner: false,
+        home: const AuthWrapper(),
+        builder: EasyLoading.init(),
+      ),
     );
   }
 }
