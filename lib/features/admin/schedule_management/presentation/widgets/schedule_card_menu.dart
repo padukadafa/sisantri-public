@@ -8,6 +8,7 @@ class ScheduleCardMenu extends StatelessWidget {
   final VoidCallback? onDuplicate;
   final VoidCallback? onToggleStatus;
   final VoidCallback? onDelete;
+  final VoidCallback? onShare;
 
   const ScheduleCardMenu({
     super.key,
@@ -16,6 +17,7 @@ class ScheduleCardMenu extends StatelessWidget {
     this.onDuplicate,
     this.onToggleStatus,
     this.onDelete,
+    this.onShare,
   });
 
   @override
@@ -32,6 +34,8 @@ class ScheduleCardMenu extends StatelessWidget {
           case 'toggle':
             onToggleStatus?.call();
             break;
+          case 'share':
+            onShare?.call();
           case 'delete':
             onDelete?.call();
             break;
@@ -45,6 +49,16 @@ class ScheduleCardMenu extends StatelessWidget {
               Icon(Icons.edit, size: 16),
               SizedBox(width: 8),
               Text('Edit'),
+            ],
+          ),
+        ),
+        const PopupMenuItem(
+          value: 'share',
+          child: Row(
+            children: [
+              Icon(Icons.share, size: 16),
+              SizedBox(width: 8),
+              Text('Share'),
             ],
           ),
         ),

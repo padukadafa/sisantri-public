@@ -2,10 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:sisantri/shared/models/jadwal_model.dart';
 
 import 'package:sisantri/shared/services/auth_service.dart';
 import 'package:sisantri/shared/services/firestore_service.dart';
-import 'package:sisantri/shared/models/jadwal_kegiatan_model.dart';
 
 /// Provider untuk notifikasi real-time
 final notificationsProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
@@ -47,10 +47,7 @@ final notificationsProvider = StreamProvider<List<Map<String, dynamic>>>((ref) {
           .then(
             (snapshot) => snapshot.docs
                 .map(
-                  (doc) => JadwalKegiatanModel.fromJson({
-                    'id': doc.id,
-                    ...doc.data(),
-                  }),
+                  (doc) => JadwalModel.fromJson({'id': doc.id, ...doc.data()}),
                 )
                 .toList(),
           );

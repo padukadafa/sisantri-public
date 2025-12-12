@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:sisantri/core/theme/app_theme.dart';
 import 'package:sisantri/shared/models/jadwal_model.dart';
 import '../utils/schedule_helpers.dart';
@@ -103,6 +104,33 @@ class ScheduleDateGroup extends StatelessWidget {
             onDelete: onJadwalDelete != null
                 ? () => onJadwalDelete!(jadwal)
                 : null,
+            onShare: () async {
+              SharePlus.instance.share(
+                ShareParams(
+                  text:
+                      """
+Assalamualaikum Wr Wb
+
+Pengajian ppm ${jadwal.namaHari} Subuh (${jadwal.formattedTanggal})
+
+Materi : ${jadwal.materiNama ?? ''}
+Pemateri : ${jadwal.pemateriNama ?? ''}
+Tempat : ${jadwal.tempat ?? ''}
+Waktu : ${jadwal.formattedWaktuRange}
+
+${jadwal.deskripsi != null ? '${jadwal.deskripsi}\n' : ''}
+
+Bagi temen² yg berhalangan hadir bisa izin kepada pengurus kemahasiswaan & temen2 yg mau setor uang spp bisa diserahkan kepada mas faiz
+
+Amal sholih semua santri apabila selesai kegiatan, bisa bersih bersih tempat masing masing
+
+Kerjakan karena allah semoga allah paring aman sehat selamat lancar barokah dan sukses dunia akhiratnya
+
+Alhamdulillah jazakumullahu khoiro
+""",
+                ),
+              );
+            },
           ),
         ),
       ],

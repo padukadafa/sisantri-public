@@ -11,6 +11,7 @@ class ScheduleCard extends StatelessWidget {
   final VoidCallback? onDelete;
   final VoidCallback? onToggleStatus;
   final VoidCallback? onDuplicate;
+  final VoidCallback? onShare;
 
   const ScheduleCard({
     super.key,
@@ -20,6 +21,7 @@ class ScheduleCard extends StatelessWidget {
     this.onDelete,
     this.onToggleStatus,
     this.onDuplicate,
+    this.onShare,
   });
 
   @override
@@ -61,6 +63,7 @@ class ScheduleCard extends StatelessWidget {
                     onDuplicate: onDuplicate,
                     onToggleStatus: onToggleStatus,
                     onDelete: onDelete,
+                    onShare: onShare,
                   ),
                 ],
               ),

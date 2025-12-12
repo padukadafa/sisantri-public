@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
 import 'package:sisantri/core/theme/app_theme.dart';
-import 'package:sisantri/shared/models/jadwal_kegiatan_model.dart';
+import 'package:sisantri/shared/models/jadwal_model.dart';
 
 class KegiatanListItem extends StatelessWidget {
-  final JadwalKegiatanModel item;
+  final JadwalModel item;
 
   const KegiatanListItem({super.key, required this.item});
 

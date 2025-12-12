@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:sisantri/shared/models/jadwal_kegiatan_model.dart';
+import 'package:sisantri/shared/models/jadwal_model.dart';
 import 'package:sisantri/shared/models/presensi_aggregate_model.dart';
 import '../models/user_model.dart';
 import '../models/presensi_model.dart';

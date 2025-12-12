@@ -38,6 +38,8 @@ class JadwalModel {
   final int presensiIzin;
   final int presensiSakit;
   final int presensiAlpha;
+  final String? materiNama;
+  final String? materiJenis;
 
   final bool isAktif;
   final DateTime? createdAt;
@@ -67,6 +69,8 @@ class JadwalModel {
     this.presensiIzin = 0,
     this.presensiSakit = 0,
     this.presensiAlpha = 0,
+    this.materiNama,
+    this.materiJenis,
   });
 
   /// Factory constructor untuk membuat JadwalModel dari JSON
@@ -111,6 +115,8 @@ class JadwalModel {
       presensiIzin: json['presensiIzin'] as int? ?? 0,
       presensiSakit: json['presensiSakit'] as int? ?? 0,
       presensiAlpha: json['presensiAlpha'] as int? ?? 0,
+      materiNama: json['materiNama'] as String?,
+      materiJenis: json['materiJenis'] as String?,
     );
   }
 
@@ -139,6 +145,8 @@ class JadwalModel {
       'presensiIzin': presensiIzin,
       'presensiSakit': presensiSakit,
       'presensiAlpha': presensiAlpha,
+      'materiNama': materiNama,
+      'materiJenis': materiJenis,
     };
   }
 
@@ -154,7 +162,10 @@ class JadwalModel {
       'deskripsi': deskripsi,
       'pemateriId': pemateriId,
       'pemateriNama': pemateriNama,
+
       'materiId': materiId,
+      'materiNama': materiNama,
+      'materiJenis': materiJenis,
       'ayatMulai': ayatMulai,
       'ayatSelesai': ayatSelesai,
       'halamanMulai': halamanMulai,
@@ -201,6 +212,8 @@ class JadwalModel {
     int? presensiIzin,
     int? presensiSakit,
     int? presensiAlpha,
+    String? materiNama,
+    String? materiJenis,
   }) {
     return JadwalModel(
       id: id ?? this.id,
@@ -226,6 +239,8 @@ class JadwalModel {
       presensiIzin: presensiIzin ?? this.presensiIzin,
       presensiSakit: presensiSakit ?? this.presensiSakit,
       presensiAlpha: presensiAlpha ?? this.presensiAlpha,
+      materiNama: materiNama ?? this.materiNama,
+      materiJenis: materiJenis ?? this.materiJenis,
     );
   }
 
@@ -304,6 +319,20 @@ class JadwalModel {
 
   int get totalPresensi {
     return presensiHadir + presensiIzin + presensiSakit + presensiAlpha;
+  }
+
+  String get namaHari {
+    const hari = [
+      "Senin",
+      "Selasa",
+      "Rabu",
+      "Kamis",
+      "Jumat",
+      "Sabtu",
+      "Minggu",
+    ];
+
+    return hari[tanggal.weekday - 1];
   }
 
   @override

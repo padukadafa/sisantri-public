@@ -8,7 +8,6 @@ import 'package:sisantri/shared/models/presensi_model.dart';
 import 'package:sisantri/shared/models/user_model.dart';
 import 'package:sisantri/features/admin/user_management/presentation/pages/user_management_page.dart';
 import 'package:sisantri/features/admin/attendance_management/presentation/pages/attendance_report_page.dart';
-import 'package:sisantri/features/admin/statistics/presentation/pages/admin_statistics_page.dart';
 import 'package:sisantri/shared/services/presensi_service.dart';
 
 enum PeriodFilter {
@@ -40,7 +39,9 @@ final adminStatsProvider =
             .map((doc) => UserModel.fromJson({'id': doc.id, ...doc.data()}))
             .toList();
 
-        final santriCount = users.where((u) => u.isSantri).length;
+        final santriCount = users
+            .where((u) => u.isSantri && u.rfidCardId != null)
+            .length;
         final guruCount = users.where((u) => u.isDewaGuru).length;
         final adminCount = users.where((u) => u.isAdmin).length;
 

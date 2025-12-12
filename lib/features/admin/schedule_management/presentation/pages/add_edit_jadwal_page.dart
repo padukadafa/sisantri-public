@@ -344,6 +344,8 @@ class _AddEditJadwalPageNewState extends ConsumerState<AddEditJadwalPage> {
         isAktif: _isAktif,
         createdAt: widget.jadwal?.createdAt ?? DateTime.now(),
         updatedAt: DateTime.now(),
+        materiNama: _selectedMateriNama,
+        materiJenis: _selectedMateriJenis,
       );
 
       if (widget.jadwal == null) {

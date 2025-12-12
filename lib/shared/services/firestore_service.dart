@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sisantri/features/shared/announcement/data/models/announcement_model.dart';
+import 'package:sisantri/shared/models/jadwal_model.dart';
 import 'package:sisantri/shared/services/presensi_service.dart';
 import 'package:sisantri/shared/services/announcement_service.dart';
 import 'package:sisantri/shared/services/presensi_aggregate_service.dart';
 import '../models/user_model.dart';
-import '../models/jadwal_kegiatan_model.dart';
 import '../models/presensi_model.dart';
 import '../models/leaderboard_model.dart';
 
@@ -201,17 +201,14 @@ class FirestoreService {
 
       // Get upcoming kegiatan
       final upcomingKegiatanSnapshot = await _firestore
-          .collection('jadwal_kegiatan')
+          .collection('jadwal')
           .where('tanggal', isGreaterThan: DateTime.now())
           .orderBy('tanggal')
           .limit(3)
           .get();
 
       final upcomingKegiatan = upcomingKegiatanSnapshot.docs
-          .map(
-            (doc) =>
-                JadwalKegiatanModel.fromJson({'id': doc.id, ...doc.data()}),
-          )
+          .map((doc) => JadwalModel.fromJson({'id': doc.id, ...doc.data()}))
           .toList();
 
       // Get recent pengumuman - use AnnouncementService

@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:sisantri/features/shared/announcement/data/models/announcement_model.dart';
+import 'package:sisantri/shared/models/jadwal_model.dart';
 import 'package:sisantri/shared/services/auth_service.dart';
 import 'package:sisantri/shared/services/firestore_service.dart';
 import 'package:sisantri/shared/models/user_model.dart';
-import 'package:sisantri/shared/models/jadwal_kegiatan_model.dart';
 import 'package:sisantri/shared/models/presensi_model.dart';
 import 'package:sisantri/shared/services/presensi_service.dart';
 
@@ -25,9 +25,7 @@ final todayPresensiProvider = FutureProvider<PresensiModel?>((ref) async {
   return await PresensiService.getCurrentPresensi(currentUser.uid);
 });
 
-final upcomingKegiatanProvider = StreamProvider<List<JadwalKegiatanModel>>((
-  ref,
-) {
+final upcomingKegiatanProvider = StreamProvider<List<JadwalModel>>((ref) {
   // Query jadwal upcoming langsung dari Firestore
   return FirebaseFirestore.instance
       .collection('jadwal')
@@ -37,10 +35,7 @@ final upcomingKegiatanProvider = StreamProvider<List<JadwalKegiatanModel>>((
       .snapshots()
       .map(
         (snapshot) => snapshot.docs
-            .map(
-              (doc) =>
-                  JadwalKegiatanModel.fromJson({'id': doc.id, ...doc.data()}),
-            )
+            .map((doc) => JadwalModel.fromJson({'id': doc.id, ...doc.data()}))
             .toList(),
       );
 });
