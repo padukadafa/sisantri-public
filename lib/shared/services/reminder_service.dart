@@ -41,16 +41,16 @@ class ReminderService {
     }
 
     // Initialize notification plugin with proper settings
-    const AndroidInitializationSettings androidSettings = 
+    const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
-    
-    const DarwinInitializationSettings iosSettings = 
+
+    const DarwinInitializationSettings iosSettings =
         DarwinInitializationSettings(
-      requestAlertPermission: true,
-      requestBadgePermission: true,
-      requestSoundPermission: true,
-    );
-    
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
+        );
+
     const InitializationSettings initSettings = InitializationSettings(
       android: androidSettings,
       iOS: iosSettings,
@@ -66,7 +66,8 @@ class ReminderService {
     // Request notification permissions (Android 13+)
     await _notifications
         .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+          AndroidFlutterLocalNotificationsPlugin
+        >()
         ?.requestNotificationsPermission();
 
     // Setup notification channels
@@ -77,7 +78,7 @@ class ReminderService {
 
     // Load preferences dan schedule reminders
     await scheduleAllReminders();
-    
+
     print('✅ ReminderService initialized successfully');
   }
 
@@ -180,8 +181,10 @@ class ReminderService {
       // USE NATIVE IMPLEMENTATION - More reliable!
       await NativeNotificationService.scheduleExactNotification(
         id: notificationId++,
-        title: '🕌 Pengingat Sholat ${PrayerTimesService.getPrayerDisplayName(prayerName)}',
-        body: '$minutesBefore menit lagi masuk waktu sholat ${PrayerTimesService.getPrayerDisplayName(prayerName)}',
+        title:
+            '🕌 Pengingat Sholat ${PrayerTimesService.getPrayerDisplayName(prayerName)}',
+        body:
+            '$minutesBefore menit lagi masuk waktu sholat ${PrayerTimesService.getPrayerDisplayName(prayerName)}',
         scheduledTime: reminderTime,
       );
 
@@ -189,8 +192,10 @@ class ReminderService {
       if (prayerTime.isAfter(DateTime.now())) {
         await NativeNotificationService.scheduleExactNotification(
           id: notificationId++,
-          title: '🕌 Waktu Sholat ${PrayerTimesService.getPrayerDisplayName(prayerName)}',
-          body: 'Sudah masuk waktu sholat ${PrayerTimesService.getPrayerDisplayName(prayerName)}. Yuk segera ke masjid! 🤲',
+          title:
+              '🕌 Waktu Sholat ${PrayerTimesService.getPrayerDisplayName(prayerName)}',
+          body:
+              'Sudah masuk waktu sholat ${PrayerTimesService.getPrayerDisplayName(prayerName)}. Yuk segera ke masjid! 🤲',
           scheduledTime: prayerTime,
         );
       }
@@ -447,19 +452,21 @@ class ReminderService {
     String body = 'Test reminder dijadwalkan muncul!',
   }) async {
     try {
-      final scheduledTime = DateTime.now().add(Duration(seconds: secondsFromNow));
-      
+      final scheduledTime = DateTime.now().add(
+        Duration(seconds: secondsFromNow),
+      );
+
       print('🔔 Scheduling native test notification:');
       print('   - Will trigger in: $secondsFromNow seconds');
       print('   - Scheduled time: $scheduledTime');
-      
+
       final success = await NativeNotificationService.scheduleExactNotification(
         id: 998,
         title: title,
         body: body,
         scheduledTime: scheduledTime,
       );
-      
+
       if (success) {
         print('✅ Test notification scheduled successfully!');
       } else {
@@ -476,33 +483,35 @@ class ReminderService {
     print('\n═══════════════════════════════════════');
     print('🔍 REMINDER SERVICE DEBUG INFO');
     print('═══════════════════════════════════════');
-    
+
     // Timezone
     print('⏰ Timezone: ${tz.local.name}');
     print('📅 Current time: ${tz.TZDateTime.now(tz.local)}');
-    
+
     // Permissions
     final canExact = await canScheduleExactAlarms();
     print('✅ Exact alarm permission: $canExact');
-    
+
     // Pending notifications
     final pending = await _notifications.pendingNotificationRequests();
     print('📋 Pending notifications: ${pending.length}');
     for (var notif in pending) {
       print('   - ID ${notif.id}: ${notif.title}');
     }
-    
+
     // Preferences
     final prefs = await SharedPreferences.getInstance();
     final prayerEnabled = prefs.getBool(_keyPrayerReminderEnabled) ?? true;
     final scheduleEnabled = prefs.getBool(_keyScheduleReminderEnabled) ?? true;
     final prayerMinutes = prefs.getInt(_keyPrayerReminderMinutes) ?? 10;
     final scheduleMinutes = prefs.getInt(_keyScheduleReminderMinutes) ?? 15;
-    
+
     print('🕌 Prayer reminder: $prayerEnabled ($prayerMinutes min before)');
-    print('📅 Schedule reminder: $scheduleEnabled ($scheduleMinutes min before)');
+    print(
+      '📅 Schedule reminder: $scheduleEnabled ($scheduleMinutes min before)',
+    );
     print('🔔 Using native AlarmManager for reliable scheduling');
-    
+
     print('═══════════════════════════════════════\n');
   }
 }

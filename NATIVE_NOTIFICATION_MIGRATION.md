@@ -5,6 +5,7 @@
 Scheduled notifications were not appearing despite successful scheduling logs. Investigation revealed that Android system was blocking the `flutter_local_notifications` plugin at OS level, even with exact alarm permissions granted.
 
 ### Symptoms
+
 - ✅ Logs showed: "Test notification scheduled successfully!"
 - ✅ Notifications appeared in pending list
 - ✅ Exact alarm permission granted
@@ -12,6 +13,7 @@ Scheduled notifications were not appearing despite successful scheduling logs. I
 - ❌ No error messages or warnings
 
 ### Root Cause
+
 Android system blocking `flutter_local_notifications` plugin for scheduled notifications, while allowing instant notifications.
 
 ---
@@ -19,11 +21,14 @@ Android system blocking `flutter_local_notifications` plugin for scheduled notif
 ## Solution: Native Kotlin AlarmManager Implementation
 
 ### Architecture Decision
+
 **Hybrid Approach:**
+
 - ✅ **Instant notifications**: Continue using `flutter_local_notifications` (working)
 - ✅ **Scheduled notifications**: Use native Android `AlarmManager` (reliable)
 
 This approach leverages the best of both worlds:
+
 - Flutter plugin's convenience for instant notifications
 - Native Android's reliability for scheduled notifications
 
@@ -34,17 +39,19 @@ This approach leverages the best of both worlds:
 ### 1. Native Kotlin Code
 
 #### NotificationHelper.kt
+
 **Location:** `android/app/src/main/kotlin/com/example/sisantri/NotificationHelper.kt`
 
 **Purpose:** Direct AlarmManager scheduling bypassing Flutter plugin
 
 **Key Methods:**
+
 ```kotlin
 fun scheduleExactNotification(
-    context: Context, 
-    id: Int, 
-    title: String, 
-    body: String, 
+    context: Context,
+    id: Int,
+    title: String,
+    body: String,
     triggerAtMillis: Long
 ) {
     val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
@@ -53,12 +60,12 @@ fun scheduleExactNotification(
         putExtra("notification_title", title)
         putExtra("notification_body", body)
     }
-    
+
     val pendingIntent = PendingIntent.getBroadcast(
         context, id, intent,
         PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
     )
-    
+
     // Use setExactAndAllowWhileIdle for reliable delivery
     alarmManager.setExactAndAllowWhileIdle(
         AlarmManager.RTC_WAKEUP,
@@ -69,13 +76,14 @@ fun scheduleExactNotification(
 ```
 
 **NotificationReceiver:**
+
 ```kotlin
 class NotificationReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val id = intent.getIntExtra("notification_id", 0)
         val title = intent.getStringExtra("notification_title") ?: ""
         val body = intent.getStringExtra("notification_body") ?: ""
-        
+
         // Display notification using NotificationCompat
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
@@ -84,7 +92,7 @@ class NotificationReceiver : BroadcastReceiver() {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)
             .build()
-            
+
         notificationManager.notify(id, notification)
     }
 }
@@ -95,17 +103,19 @@ class NotificationReceiver : BroadcastReceiver() {
 ---
 
 #### MainActivity.kt
+
 **Location:** `android/app/src/main/kotlin/com/example/sisantri/MainActivity.kt`
 
 **Purpose:** Platform channel bridge between Dart and Kotlin
 
 **Implementation:**
+
 ```kotlin
 private val CHANNEL = "com.example.sisantri/notification"
 
 override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
     super.configureFlutterEngine(flutterEngine)
-    
+
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, CHANNEL)
         .setMethodCallHandler { call, result ->
             when (call.method) {
@@ -114,7 +124,7 @@ override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
                     val title = call.argument<String>("title") ?: ""
                     val body = call.argument<String>("body") ?: ""
                     val triggerAtMillis = call.argument<Long>("triggerAtMillis") ?: 0
-                    
+
                     NotificationHelper.scheduleExactNotification(
                         this, id, title, body, triggerAtMillis
                     )
@@ -136,12 +146,14 @@ override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
 ---
 
 #### AndroidManifest.xml
+
 **Location:** `android/app/src/main/AndroidManifest.xml`
 
 **Changes:**
+
 ```xml
-<receiver 
-    android:name=".NotificationReceiver" 
+<receiver
+    android:name=".NotificationReceiver"
     android:exported="false"/>
 ```
 
@@ -154,11 +166,13 @@ override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
 ### 2. Flutter/Dart Code
 
 #### native_notification_service.dart
+
 **Location:** `lib/shared/services/native_notification_service.dart`
 
 **Purpose:** Dart wrapper for platform channel with clean API
 
 **Implementation:**
+
 ```dart
 class NativeNotificationService {
   static const platform = MethodChannel('com.example.sisantri/notification');
@@ -171,7 +185,7 @@ class NativeNotificationService {
   }) async {
     try {
       final triggerAtMillis = scheduledTime.millisecondsSinceEpoch;
-      
+
       final result = await platform.invokeMethod(
         'scheduleExactNotification',
         {
@@ -181,7 +195,7 @@ class NativeNotificationService {
           'triggerAtMillis': triggerAtMillis,
         },
       );
-      
+
       print('✅ Native notification scheduled: ID=$id at $scheduledTime');
       return result == true;
     } catch (e) {
@@ -208,23 +222,26 @@ class NativeNotificationService {
 ---
 
 #### reminder_service.dart
+
 **Location:** `lib/shared/services/reminder_service.dart`
 
 **Changes:**
 
 1. **Import Added:**
+
 ```dart
 import 'native_notification_service.dart';
 ```
 
 2. **Prayer Reminders Migrated:**
+
 ```dart
 static Future<void> schedulePrayerReminders() async {
   // ...existing setup code...
-  
+
   // OLD (not working):
   // await _scheduleNotification(...)
-  
+
   // NEW (working):
   await NativeNotificationService.scheduleExactNotification(
     id: notificationId++,
@@ -236,10 +253,11 @@ static Future<void> schedulePrayerReminders() async {
 ```
 
 3. **Schedule Reminders Migrated:**
+
 ```dart
 static Future<void> scheduleJadwalReminders() async {
   // ...existing setup code...
-  
+
   // Before event reminder
   if (reminderTime.isAfter(DateTime.now())) {
     await NativeNotificationService.scheduleExactNotification(
@@ -249,7 +267,7 @@ static Future<void> scheduleJadwalReminders() async {
       scheduledTime: reminderTime,
     );
   }
-  
+
   // Exact time notification
   await NativeNotificationService.scheduleExactNotification(
     id: notificationId++,
@@ -261,6 +279,7 @@ static Future<void> scheduleJadwalReminders() async {
 ```
 
 4. **Tomorrow Prayer Reminders Migrated:**
+
 ```dart
 static Future<void> _scheduleTomorrowPrayerReminders() async {
   // Similar migration using NativeNotificationService
@@ -268,6 +287,7 @@ static Future<void> _scheduleTomorrowPrayerReminders() async {
 ```
 
 5. **Removed:**
+
 - ❌ `_scheduleNotification()` method (no longer needed)
 
 **Status:** ✅ All production reminders migrated
@@ -275,11 +295,13 @@ static Future<void> _scheduleTomorrowPrayerReminders() async {
 ---
 
 #### reminder_test_page.dart
+
 **Location:** `lib/shared/pages/reminder_test_page.dart`
 
 **Changes:**
 
 1. **Native Test Section Added:**
+
 ```dart
 Widget _buildNativeTestSection() {
   return Container(
@@ -306,6 +328,7 @@ Widget _buildNativeTestSection() {
 ```
 
 2. **Test Method:**
+
 ```dart
 Future<void> _scheduleNativeTest(int seconds) async {
   final scheduledTime = DateTime.now().add(Duration(seconds: seconds));
@@ -315,7 +338,7 @@ Future<void> _scheduleNativeTest(int seconds) async {
     body: 'Notifikasi native berhasil muncul!',
     scheduledTime: scheduledTime,
   );
-  
+
   if (success) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text('✅ Native test scheduled: $seconds seconds')),
@@ -331,6 +354,7 @@ Future<void> _scheduleNativeTest(int seconds) async {
 ## Migration Status
 
 ### ✅ Completed
+
 - [x] Native Kotlin AlarmManager implementation
 - [x] BroadcastReceiver for notification delivery
 - [x] Platform channel bridge (MainActivity)
@@ -343,12 +367,14 @@ Future<void> _scheduleNativeTest(int seconds) async {
 - [x] Removed unused `_scheduleNotification()` method
 
 ### 🧪 Pending Testing
+
 - [ ] Production testing of prayer reminders (5 daily prayers)
 - [ ] Production testing of schedule reminders
 - [ ] Multi-day prayer reminder testing
 - [ ] Edge case testing (app closed, device restart, etc.)
 
 ### 📝 Documentation Tasks
+
 - [x] Migration summary document
 - [ ] Update user documentation
 - [ ] Update developer documentation
@@ -361,11 +387,13 @@ Future<void> _scheduleNativeTest(int seconds) async {
 ### Why Native Implementation Works
 
 **Flutter Plugin (Blocked):**
+
 ```
 Dart → flutter_local_notifications → Android API → ❌ BLOCKED
 ```
 
 **Native Implementation (Working):**
+
 ```
 Dart → MethodChannel → Kotlin → AlarmManager → ✅ WORKS
 ```
@@ -377,12 +405,14 @@ The key difference is **direct AlarmManager access** without intermediary plugin
 **Method Used:** `setExactAndAllowWhileIdle()`
 
 **Why This Method:**
+
 - ✅ Exact timing (critical for prayer times)
 - ✅ Works even in Doze mode
 - ✅ High priority delivery
 - ✅ Minimal battery impact
 
 **Alternative Methods (Not Used):**
+
 - `setExact()` - Blocked in Doze mode ❌
 - `setInexactRepeating()` - Not precise enough ❌
 - `set()` - Not guaranteed delivery ❌
@@ -392,6 +422,7 @@ The key difference is **direct AlarmManager access** without intermediary plugin
 ## Permissions
 
 **Required Permissions (Already Configured):**
+
 ```xml
 <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
 <uses-permission android:name="android.permission.USE_EXACT_ALARM"/>
@@ -400,6 +431,7 @@ The key difference is **direct AlarmManager access** without intermediary plugin
 ```
 
 **Runtime Permission Handling:**
+
 ```dart
 static Future<bool> canScheduleExactAlarms() async {
   if (Platform.isAndroid) {
@@ -414,40 +446,47 @@ static Future<bool> canScheduleExactAlarms() async {
 ## Testing Results
 
 ### User Testing
+
 **Date:** Current session  
 **Tester:** User (macbookairm2)  
 **Test Cases:**
+
 - [x] Native 10s notification → ✅ **SUCCESS**: "notifikasinya muncul"
 - [x] Native 30s notification → ✅ **SUCCESS**
 
 **Conclusion:** Native implementation reliably delivers scheduled notifications.
 
 ### Flutter Plugin Testing (Previous)
+
 **Result:** ❌ Failed - notifications scheduled but never triggered
 
 ### Comparison
-| Aspect | Flutter Plugin | Native Implementation |
-|--------|----------------|----------------------|
-| Scheduling | ✅ Success | ✅ Success |
-| Pending List | ✅ Appears | N/A (not needed) |
-| Delivery | ❌ Blocked | ✅ **Works** |
-| User Confirmation | ❌ Failed | ✅ **"notifikasinya muncul"** |
+
+| Aspect            | Flutter Plugin | Native Implementation         |
+| ----------------- | -------------- | ----------------------------- |
+| Scheduling        | ✅ Success     | ✅ Success                    |
+| Pending List      | ✅ Appears     | N/A (not needed)              |
+| Delivery          | ❌ Blocked     | ✅ **Works**                  |
+| User Confirmation | ❌ Failed      | ✅ **"notifikasinya muncul"** |
 
 ---
 
 ## Code Quality
 
 ### Before Migration
+
 - **Lines of Code:** ~735 lines
 - **Dependencies:** flutter_local_notifications, timezone, permission_handler
 - **Reliability:** ❌ Scheduled notifications blocked
 
 ### After Migration
+
 - **Lines of Code:** ~683 lines (52 lines removed)
 - **Dependencies:** Added native Kotlin code + platform channel
 - **Reliability:** ✅ **Confirmed working**
 
 ### Code Organization
+
 ```
 lib/shared/services/
 ├── reminder_service.dart          # Main service (migrated to native)
@@ -466,11 +505,13 @@ android/app/src/main/kotlin/com/example/sisantri/
 ### For Future Developers
 
 **When to Use Native:**
+
 - ✅ Scheduled notifications (prayer times, schedules)
 - ✅ Exact timing required
 - ✅ Critical delivery needed
 
 **When to Use Flutter Plugin:**
+
 - ✅ Instant notifications
 - ✅ User-triggered notifications
 - ✅ Simple notification display
@@ -480,36 +521,41 @@ android/app/src/main/kotlin/com/example/sisantri/
 **If notifications stop working:**
 
 1. **Check permissions:**
+
 ```dart
 await ReminderService.requestPermissions();
 ```
 
 2. **Verify AlarmManager scheduling:**
+
 ```kotlin
 // Add logging in NotificationHelper.kt
 Log.d("NotificationHelper", "Scheduling alarm at: $triggerAtMillis")
 ```
 
 3. **Check BroadcastReceiver:**
+
 ```kotlin
 // Add logging in NotificationReceiver.onReceive()
 Log.d("NotificationReceiver", "Received alarm: id=$id")
 ```
 
 4. **Test with native buttons:**
-Use purple "Native Test" section in `reminder_test_page.dart`
+   Use purple "Native Test" section in `reminder_test_page.dart`
 
 ---
 
 ## Performance Impact
 
 **Native Implementation:**
+
 - ✅ Minimal performance overhead
 - ✅ Battery efficient (uses AlarmManager best practices)
 - ✅ No memory leaks (proper cleanup)
 - ✅ Reliable delivery even in background
 
 **Comparison:**
+
 - Native AlarmManager: ~1ms scheduling time
 - Flutter plugin: ~2-3ms (when working)
 - Reliability: Native 100% vs Flutter plugin 0% (blocked)
@@ -519,16 +565,20 @@ Use purple "Native Test" section in `reminder_test_page.dart`
 ## Future Improvements
 
 ### Potential Enhancements
+
 1. **Notification Actions:**
+
    - Add "Dismiss" and "Snooze" buttons
    - Implement action handling in BroadcastReceiver
 
 2. **Advanced Scheduling:**
+
    - Support for repeating alarms
    - Custom repeat intervals
    - Smart scheduling based on user patterns
 
 3. **Analytics:**
+
    - Track notification delivery rate
    - Monitor user interaction
    - A/B test notification content
@@ -539,11 +589,14 @@ Use purple "Native Test" section in `reminder_test_page.dart`
    - Expanded notification views
 
 ### Optimization Opportunities
+
 1. **Batch Scheduling:**
+
    - Schedule multiple notifications in single transaction
    - Reduce platform channel overhead
 
 2. **Smart Rescheduling:**
+
    - Auto-reschedule if device was off
    - Handle timezone changes
    - Adjust for daylight saving time
@@ -558,15 +611,18 @@ Use purple "Native Test" section in `reminder_test_page.dart`
 ## References
 
 ### Android Documentation
+
 - [AlarmManager API](https://developer.android.com/reference/android/app/AlarmManager)
 - [BroadcastReceiver Guide](https://developer.android.com/guide/components/broadcasts)
 - [Exact Alarm Permission](https://developer.android.com/about/versions/12/behavior-changes-12#exact-alarm-permission)
 
 ### Flutter Documentation
+
 - [Platform Channels](https://flutter.dev/docs/development/platform-integration/platform-channels)
 - [MethodChannel](https://api.flutter.dev/flutter/services/MethodChannel-class.html)
 
 ### Best Practices
+
 - [Background Work Guidelines](https://developer.android.com/guide/background)
 - [Doze and App Standby](https://developer.android.com/training/monitoring-device-state/doze-standby)
 - [Notification Best Practices](https://developer.android.com/design/patterns/notifications)
@@ -578,13 +634,15 @@ Use purple "Native Test" section in `reminder_test_page.dart`
 The migration from `flutter_local_notifications` to native Kotlin `AlarmManager` implementation successfully resolved the scheduled notification blocking issue. User testing confirmed reliable notification delivery, and all production reminder code has been migrated to the native implementation.
 
 ### Key Achievements
+
 ✅ Root cause identified (Android blocking Flutter plugin)  
 ✅ Native workaround implemented and tested  
 ✅ All production reminders migrated  
 ✅ Code cleanup completed (52 lines removed)  
-✅ User verification: **"notifikasinya muncul"**  
+✅ User verification: **"notifikasinya muncul"**
 
 ### Result
+
 **Production ready** ✅ - Native scheduled notifications working reliably
 
 ---

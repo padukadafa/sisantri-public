@@ -32,6 +32,7 @@ await NativeNotificationService.cancelNotification(1001);
 **Purpose:** Schedule exact-time notification using native AlarmManager
 
 **Parameters:**
+
 - `id` (int, required): Unique notification ID
 - `title` (String, required): Notification title
 - `body` (String, required): Notification body text
@@ -40,6 +41,7 @@ await NativeNotificationService.cancelNotification(1001);
 **Returns:** `Future<bool>` - true if successful
 
 **Example:**
+
 ```dart
 final success = await NativeNotificationService.scheduleExactNotification(
   id: 2001,
@@ -62,11 +64,13 @@ if (success) {
 **Purpose:** Cancel a scheduled notification
 
 **Parameters:**
+
 - `id` (int, required): ID of notification to cancel
 
 **Returns:** `Future<bool>` - true if successful
 
 **Example:**
+
 ```dart
 await NativeNotificationService.cancelNotification(2001);
 ```
@@ -76,8 +80,9 @@ await NativeNotificationService.cancelNotification(2001);
 ## 🔢 Notification ID Ranges
 
 **Reserved Ranges:**
+
 - `1000-1199`: Prayer reminders
-- `2000-2999`: Schedule reminders  
+- `2000-2999`: Schedule reminders
 - `997-999`: Test notifications
 
 **Your Custom IDs:**
@@ -88,12 +93,14 @@ Use IDs outside reserved ranges (e.g., `3000+`)
 ## ⚠️ Important Notes
 
 ### ✅ DO
+
 - Use unique IDs for each notification
 - Schedule future times only (`scheduledTime > now`)
 - Request permissions before scheduling
 - Handle scheduling failures gracefully
 
 ### ❌ DON'T
+
 - Reuse IDs without canceling first
 - Schedule past times
 - Assume scheduling always succeeds
@@ -104,13 +111,16 @@ Use IDs outside reserved ranges (e.g., `3000+`)
 ## 🧪 Testing
 
 ### Test in UI
+
 Navigate to: **Settings → Reminder Test Page**
 
 Use purple "Native AlarmManager Test" section:
+
 - **Native 10s** - Test 10 second notification
 - **Native 30s** - Test 30 second notification
 
 ### Test Programmatically
+
 ```dart
 import 'package:sisantri/shared/services/native_notification_service.dart';
 
@@ -132,6 +142,7 @@ print('✅ Test scheduled - wait 10 seconds');
 ### Notification Not Appearing?
 
 **1. Check Permissions:**
+
 ```dart
 import 'package:sisantri/shared/services/reminder_service.dart';
 
@@ -141,6 +152,7 @@ print('Can schedule exact alarms: $canUse');
 ```
 
 **2. Verify Scheduling:**
+
 ```dart
 final success = await NativeNotificationService.scheduleExactNotification(
   id: 999,
@@ -153,10 +165,12 @@ print('Scheduling result: $success');
 
 **3. Check Logs:**
 Look for these messages:
+
 - ✅ `Native notification scheduled: ID=999 at ...`
 - ❌ `Error scheduling native notification: ...`
 
 **4. Test with Longer Delay:**
+
 ```dart
 // Try 60 seconds instead of 10
 await NativeNotificationService.scheduleExactNotification(
@@ -172,18 +186,23 @@ await NativeNotificationService.scheduleExactNotification(
 ## 📱 Platform Support
 
 ### Android
+
 ✅ **Fully Supported**
+
 - Native AlarmManager implementation
 - Exact timing guaranteed
 - Works in Doze mode
 
 ### iOS
+
 ⚠️ **Not Yet Implemented**
+
 - Falls back to Flutter local notifications
 - May need separate iOS implementation
 - iOS has different notification system
 
 **Check Platform:**
+
 ```dart
 import 'dart:io';
 
@@ -201,6 +220,7 @@ if (Platform.isAndroid) {
 ## 🔐 Permissions
 
 ### Required Android Permissions
+
 ```xml
 <!-- Already configured in AndroidManifest.xml -->
 <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM"/>
@@ -209,6 +229,7 @@ if (Platform.isAndroid) {
 ```
 
 ### Request at Runtime
+
 ```dart
 import 'package:sisantri/shared/services/reminder_service.dart';
 
@@ -228,6 +249,7 @@ if (!canSchedule) {
 ## 💡 Best Practices
 
 ### 1. Use Unique IDs
+
 ```dart
 // ✅ GOOD - Unique ID for each notification
 int notificationId = 1000;
@@ -250,6 +272,7 @@ for (var prayer in prayers) {
 ```
 
 ### 2. Cancel Before Rescheduling
+
 ```dart
 // ✅ GOOD - Cancel first, then reschedule
 await NativeNotificationService.cancelNotification(1001);
@@ -266,6 +289,7 @@ await NativeNotificationService.scheduleExactNotification(
 ```
 
 ### 3. Validate Time
+
 ```dart
 // ✅ GOOD - Check time is in future
 final scheduledTime = calculateTime();
@@ -288,6 +312,7 @@ await NativeNotificationService.scheduleExactNotification(
 ```
 
 ### 4. Handle Errors
+
 ```dart
 // ✅ GOOD - Try-catch with fallback
 try {
@@ -297,7 +322,7 @@ try {
     body: 'Important notification',
     scheduledTime: DateTime.now().add(Duration(hours: 1)),
   );
-  
+
   if (!success) {
     // Fallback or show user message
     print('⚠️ Failed to schedule notification');
@@ -317,10 +342,11 @@ await NativeNotificationService.scheduleExactNotification(...);
 ## 📊 Examples
 
 ### Prayer Reminder
+
 ```dart
 Future<void> schedulePrayerReminder(String prayerName, DateTime prayerTime) async {
   final reminderTime = prayerTime.subtract(Duration(minutes: 10));
-  
+
   await NativeNotificationService.scheduleExactNotification(
     id: 1001,
     title: '🕌 Prayer Reminder',
@@ -331,18 +357,19 @@ Future<void> schedulePrayerReminder(String prayerName, DateTime prayerTime) asyn
 ```
 
 ### Schedule Reminder
+
 ```dart
 Future<void> scheduleEventReminder(String eventName, DateTime eventTime) async {
   // 15 minutes before
   final reminderTime = eventTime.subtract(Duration(minutes: 15));
-  
+
   await NativeNotificationService.scheduleExactNotification(
     id: 2001,
     title: '📅 Event Reminder',
     body: '15 minutes until $eventName',
     scheduledTime: reminderTime,
   );
-  
+
   // Exact time
   await NativeNotificationService.scheduleExactNotification(
     id: 2002,
@@ -354,12 +381,13 @@ Future<void> scheduleEventReminder(String eventName, DateTime eventTime) async {
 ```
 
 ### Daily Recurring Reminder
+
 ```dart
 Future<void> scheduleDailyReminder() async {
   // Schedule for today
   final today = DateTime.now();
   final todayReminder = DateTime(today.year, today.month, today.day, 8, 0); // 8 AM
-  
+
   if (todayReminder.isAfter(DateTime.now())) {
     await NativeNotificationService.scheduleExactNotification(
       id: 3001,
@@ -368,11 +396,11 @@ Future<void> scheduleDailyReminder() async {
       scheduledTime: todayReminder,
     );
   }
-  
+
   // Schedule for tomorrow
   final tomorrow = today.add(Duration(days: 1));
   final tomorrowReminder = DateTime(tomorrow.year, tomorrow.month, tomorrow.day, 8, 0);
-  
+
   await NativeNotificationService.scheduleExactNotification(
     id: 3002,
     title: '☀️ Good Morning',
@@ -383,10 +411,11 @@ Future<void> scheduleDailyReminder() async {
 ```
 
 ### Multiple Notifications
+
 ```dart
 Future<void> scheduleMultipleReminders(List<Reminder> reminders) async {
   int id = 4000;
-  
+
   for (var reminder in reminders) {
     final success = await NativeNotificationService.scheduleExactNotification(
       id: id++,
@@ -394,12 +423,12 @@ Future<void> scheduleMultipleReminders(List<Reminder> reminders) async {
       body: reminder.body,
       scheduledTime: reminder.time,
     );
-    
+
     if (!success) {
       print('❌ Failed to schedule: ${reminder.title}');
     }
   }
-  
+
   print('✅ Scheduled ${reminders.length} notifications');
 }
 ```

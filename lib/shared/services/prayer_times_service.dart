@@ -1,38 +1,37 @@
 import 'package:intl/intl.dart';
+import 'package:adhan_dart/adhan_dart.dart';
 
 /// Service untuk mengelola waktu sholat
-/// Menggunakan waktu standar untuk Bandar Lampung
+/// Menggunakan package adhan_dart untuk kalkulasi akurat berdasarkan koordinat
 class PrayerTimesService {
-  // Waktu sholat default untuk Bandar Lampung
-  // Bisa disesuaikan berdasarkan koordinat atau API
-  static const Map<String, String> defaultPrayerTimes = {
-    'subuh': '04:30',
-    'dzuhur': '12:00',
-    'ashar': '15:15',
-    'maghrib': '18:00',
-    'isya': '19:15',
-  };
+  // Koordinat untuk Bandar Lampung, Indonesia
+  static const double latitude = -5.4292;
+  static const double longitude = 105.2625;
 
   /// Get waktu sholat untuk hari ini
   static Map<String, DateTime> getTodayPrayerTimes() {
     final now = DateTime.now();
-    final Map<String, DateTime> prayerTimes = {};
+    final coordinates = Coordinates(latitude, longitude);
 
-    defaultPrayerTimes.forEach((prayer, time) {
-      final timeParts = time.split(':');
-      final hour = int.parse(timeParts[0]);
-      final minute = int.parse(timeParts[1]);
+    // Calculate prayer times menggunakan metode Singapore (cocok untuk Indonesia)
+    final calculationParams = CalculationMethodParameters.singapore();
+    final prayerTimes = PrayerTimes(
+      coordinates: coordinates,
+      date: now,
+      calculationParameters: calculationParams,
+      precision: true,
+    );
 
-      prayerTimes[prayer] = DateTime(
-        now.year,
-        now.month,
-        now.day,
-        hour,
-        minute,
-      );
-    });
+    // Konversi dari UTC ke WIB (UTC+7)
+    const wibOffset = Duration(hours: 7);
 
-    return prayerTimes;
+    return {
+      'subuh': prayerTimes.fajr.add(wibOffset),
+      'dzuhur': prayerTimes.dhuhr.add(wibOffset),
+      'ashar': prayerTimes.asr.add(wibOffset),
+      'maghrib': prayerTimes.maghrib.add(wibOffset),
+      'isya': prayerTimes.isha.add(wibOffset),
+    };
   }
 
   /// Get waktu sholat berikutnya
@@ -48,20 +47,19 @@ class PrayerTimesService {
 
     // Jika semua waktu sholat hari ini sudah lewat, return Subuh besok
     final tomorrow = now.add(const Duration(days: 1));
-    final timeParts = defaultPrayerTimes['subuh']!.split(':');
-    final hour = int.parse(timeParts[0]);
-    final minute = int.parse(timeParts[1]);
+    final coordinates = Coordinates(latitude, longitude);
 
-    return {
-      'name': 'subuh',
-      'time': DateTime(
-        tomorrow.year,
-        tomorrow.month,
-        tomorrow.day,
-        hour,
-        minute,
-      ),
-    };
+    final calculationParams = CalculationMethodParameters.singapore();
+    final tomorrowPrayerTimes = PrayerTimes(
+      coordinates: coordinates,
+      date: tomorrow,
+      calculationParameters: calculationParams,
+      precision: true,
+    );
+
+    // Konversi dari UTC ke WIB (UTC+7)
+    const wibOffset = Duration(hours: 7);
+    return {'name': 'subuh', 'time': tomorrowPrayerTimes.fajr.add(wibOffset)};
   }
 
   /// Check apakah sekarang waktu sholat (dalam range ±5 menit)
@@ -97,10 +95,14 @@ class PrayerTimesService {
     return displayNames[prayerName.toLowerCase()] ?? prayerName;
   }
 
-  /// Update waktu sholat (untuk admin yang ingin custom)
-  static void updatePrayerTime(String prayer, String time) {
-    // TODO: Simpan ke SharedPreferences atau Firestore
-    // Untuk implementasi sustainable, simpan di Firestore agar bisa di-update dari admin panel
+  /// Get koordinat Bandar Lampung (bisa di-customize untuk lokasi lain)
+  static Coordinates getCoordinates() {
+    return Coordinates(latitude, longitude);
+  }
+
+  /// Get calculation parameters (bisa di-customize)
+  static CalculationParameters getCalculationParams() {
+    return CalculationMethodParameters.singapore();
   }
 
   /// Get semua waktu sholat untuk display

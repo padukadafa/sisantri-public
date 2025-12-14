@@ -3,6 +3,7 @@
 ## 📋 Problem
 
 Scheduled notification (10 detik, 30 detik, 1 menit) tidak muncul sesuai waktu yang dijadwalkan, meskipun:
+
 - ✅ Logger tertulis "berhasil dijadwalkan"
 - ✅ Notification ada di pending list
 - ❌ Notification TIDAK muncul setelah waktu yang ditentukan
@@ -14,15 +15,19 @@ Scheduled notification (10 detik, 30 detik, 1 menit) tidak muncul sesuai waktu y
 Ini adalah masalah umum di Android dengan beberapa kemungkinan penyebab:
 
 ### 1. **Notification Plugin Tidak Fully Initialized**
+
 Problem: Plugin `flutter_local_notifications` perlu di-initialize dengan proper settings dan permissions.
 
 ### 2. **Android Doze Mode**
+
 Problem: Android mengoptimalkan battery dengan delay/skip scheduled notifications saat device idle.
 
 ### 3. **Exact Alarm Permission Not Working**
+
 Problem: Meskipun permission "granted", sistem masih bisa ignore exact timing.
 
 ### 4. **Notification Channel Priority**
+
 Problem: Channel dengan `Importance.high` bisa di-suppress oleh system.
 
 ---
@@ -30,9 +35,10 @@ Problem: Channel dengan `Importance.high` bisa di-suppress oleh system.
 ## ✅ Fix yang Sudah Diimplementasi
 
 ### 1. **Full Plugin Initialization**
+
 ```dart
 // ReminderService.initialize() sekarang include:
-const AndroidInitializationSettings androidSettings = 
+const AndroidInitializationSettings androidSettings =
     AndroidInitializationSettings('@mipmap/ic_launcher');
 
 await _notifications.initialize(
@@ -47,6 +53,7 @@ await androidPlugin?.requestNotificationsPermission();
 ```
 
 ### 2. **Enhanced Notification Channel**
+
 ```dart
 // Upgraded dari Importance.high → Importance.max
 const AndroidNotificationChannel prayerChannel = AndroidNotificationChannel(
@@ -58,6 +65,7 @@ const AndroidNotificationChannel prayerChannel = AndroidNotificationChannel(
 ```
 
 ### 3. **Full Android Notification Details**
+
 ```dart
 const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
   'prayer_reminders',
@@ -71,6 +79,7 @@ const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
 ```
 
 ### 4. **Auto-Cancel Previous Test**
+
 ```dart
 // Sebelum schedule baru, cancel yang lama dulu
 await _notifications.cancel(998);
@@ -78,6 +87,7 @@ print('🗑️ Cancelled existing test notification (ID 998)');
 ```
 
 ### 5. **Enhanced Debug Logging**
+
 ```dart
 print('🔔 Scheduling test notification:');
 print('   - Now: $now');
@@ -88,6 +98,7 @@ print('   - Found in pending list: ${testNotif.isNotEmpty}');
 ```
 
 ### 6. **Debug Info Method**
+
 ```dart
 // Button baru di AppBar: 🐛 (bug report icon)
 ReminderService.printDebugInfo();
@@ -111,6 +122,7 @@ ReminderService.printDebugInfo();
 1. **Buka Test Page** → Profile → Pengaturan Pengingat → Icon 🧪
 2. **Tap icon 🐛** (bug report) di AppBar
 3. **Check console output**:
+
 ```
 ═══════════════════════════════════════
 🔍 REMINDER SERVICE DEBUG INFO
@@ -125,11 +137,13 @@ ReminderService.printDebugInfo();
 ```
 
 **Good signs:**
+
 - ✅ Timezone correct (Asia/Jakarta or your region)
 - ✅ Exact alarm permission: true
 - ✅ Current time is accurate
 
 **Bad signs:**
+
 - ❌ Exact alarm permission: false → Go to Settings
 - ❌ Timezone wrong → Restart app
 - ❌ Current time wrong → Check device time
@@ -146,6 +160,7 @@ ReminderService.printDebugInfo();
 ```
 
 **Jika instant tidak muncul:**
+
 ```
 ❌ Plugin tidak properly initialized
 ❌ Notification permission denied
@@ -183,6 +198,7 @@ Expected log:
 ```
 
 **Jika "Found in pending list: false":**
+
 ```
 ❌ CRITICAL: Notification tidak masuk queue!
 Possible causes:
@@ -203,7 +219,7 @@ Solution:
 2. Harus ada item:
    ID: 998
    Title: "⏰ Test Reminder 10 detik"
-   
+
 3. Tap refresh (🔄) setiap 5 detik
 4. Setelah 10 detik:
    - Notification harus muncul
@@ -211,6 +227,7 @@ Solution:
 ```
 
 **Jika ID 998 masih ada setelah >20 detik:**
+
 ```
 ❌ Notification stuck di queue
 Possible causes:
@@ -248,7 +265,9 @@ Android Settings:
 ## 🔧 Common Issues & Solutions (Updated)
 
 ### Issue 1: Instant Test Works, Scheduled Doesn't
-**Symptom:** 
+
+**Symptom:**
+
 - ✅ "Kirim Test Instant" muncul
 - ❌ "Test 10 detik" tidak muncul
 - ✅ Pending list shows ID 998
@@ -256,22 +275,25 @@ Android Settings:
 **Root Cause:** Android Doze mode atau battery optimization blocking scheduled alarms.
 
 **Solution:**
+
 ```
 1. Settings → Apps → SiSantri → Battery
    → Battery optimization → Don't optimize
-   
+
 2. Settings → Battery → Battery Saver → OFF
-   
+
 3. Settings → Developer Options → Standby apps
    → SiSantri → Active
-   
+
 4. Keep screen ON saat testing (untuk bypass Doze)
 
 5. Alternative: Plug charger saat testing
 ```
 
 ### Issue 2: Permission Granted But Still Not Working
-**Symptom:** 
+
+**Symptom:**
+
 - ✅ Log shows "Can use exact: true"
 - ✅ Pending list has notification
 - ❌ Notification never triggers
@@ -279,27 +301,30 @@ Android Settings:
 **Root Cause:** Android silently downgrading exact alarms to inexact.
 
 **Solution:**
+
 ```
 1. Go to Settings → Apps → SiSantri
-   
+
 2. Tap "Alarms & reminders"
-   
+
 3. You should see:
    - "Allow setting alarms and reminders" → ON
    - Below it: List of recent alarms
-   
+
 4. If no recent alarms shown:
    - Android is blocking
    - Try re-install app
    - Grant permission during first launch
-   
+
 5. Alternative approach:
    - Schedule "Test 1 menit" instead of 10 detik
    - Longer intervals more reliable
 ```
 
 ### Issue 3: Notification Found in Pending But Never Delivered
-**Symptom:** 
+
+**Symptom:**
+
 - ✅ ID 998 in pending list
 - ⏰ Wait >30 seconds
 - ❌ Notification still in pending (not delivered)
@@ -308,6 +333,7 @@ Android Settings:
 **Root Cause:** Notification stuck in queue, Android scheduler not triggering.
 
 **Solution:**
+
 ```
 IMMEDIATE FIX:
 1. Tap "Cancel Test Notification" button
@@ -319,22 +345,23 @@ IMMEDIATE FIX:
 PERMANENT FIX:
 1. Clear app data:
    Settings → Apps → SiSantri → Storage → Clear data
-   
+
 2. Uninstall app completely
-   
+
 3. Re-install app
-   
+
 4. Grant ALL permissions during first launch:
    - Notifications
    - Exact alarms
    - Battery optimization exception
-   
+
 5. Test instant notification first
-   
+
 6. Then test scheduled notification
 ```
 
 ### Issue 4: Works on Some Devices, Not Others
+
 **Symptom:** Same app, different behavior on different Android devices.
 
 **Root Cause:** OEM-specific battery optimization (Samsung, Xiaomi, Huawei, Oppo).
@@ -342,29 +369,32 @@ PERMANENT FIX:
 **Solution by Brand:**
 
 **Samsung:**
+
 ```
 1. Settings → Apps → SiSantri → Battery → Optimize battery usage
    → All apps → SiSantri → Don't optimize
-   
+
 2. Settings → Device care → Battery → Background usage limits
    → Never sleeping apps → Add SiSantri
-   
+
 3. Settings → Notifications → Advanced settings → Manage notifications
    → SiSantri → Allow all
 ```
 
 **Xiaomi:**
+
 ```
 1. Settings → Apps → Manage apps → SiSantri
    → Battery saver → No restrictions
-   
+
 2. Settings → Battery & performance → Manage apps battery usage
    → SiSantri → No restrictions
-   
+
 3. Security → Permissions → Autostart → Enable for SiSantri
 ```
 
 **Huawei:**
+
 ```
 1. Settings → Apps → Apps → SiSantri
    → Battery → Launch manually: ON
@@ -373,23 +403,27 @@ PERMANENT FIX:
 ```
 
 **Oppo/Realme:**
+
 ```
 1. Settings → Apps → App management → SiSantri
    → Battery usage → Don't optimize
-   
+
 2. Settings → Battery → Smart power saving → OFF
-   
+
 3. Settings → Privacy → Startup manager → SiSantri: ON
 ```
 
 ### Issue 5: Notification Delayed (Not Exact Time)
-**Symptom:** 
+
+**Symptom:**
+
 - Test 10 detik tapi muncul setelah 15-20 detik
 - Log shows "exactAllowWhileIdle"
 
 **Root Cause:** Android still batching notifications despite exact alarm.
 
 **Solution:**
+
 ```
 This is normal behavior untuk short intervals (<60 seconds).
 Android may batch notifications to save battery.
@@ -406,7 +440,9 @@ For production (prayer reminders):
 ```
 
 ### Issue 6: Works After Re-install, Then Stops
-**Symptom:** 
+
+**Symptom:**
+
 - Fresh install: Works perfect
 - After few hours/days: Stops working
 - No code changes
@@ -414,16 +450,17 @@ For production (prayer reminders):
 **Root Cause:** Android learning patterns and optimizing app.
 
 **Solution:**
+
 ```
 1. Prevent Android from learning:
    Settings → Apps → SiSantri → Battery
    → Background restriction → Unrestricted
-   
+
 2. Add to protected apps:
    - Samsung: Never sleeping apps
    - Xiaomi: Protected apps
    - Other: Similar feature
-   
+
 3. Keep app active:
    - Open app at least once per day
    - App usage prevents Android from hibernating it
@@ -451,6 +488,7 @@ For production (prayer reminders):
 ## 🎯 Expected vs Actual
 
 ### Expected Behavior:
+
 ```
 1. Tap "Test 10 detik"
 2. Snackbar muncul: "✅ Reminder dijadwalkan..."
@@ -460,6 +498,7 @@ For production (prayer reminders):
 ```
 
 ### Actual Behavior (Before Fix):
+
 ```
 1. Tap "Test 10 detik"
 2. Snackbar muncul: "✅ Reminder dijadwalkan..."
@@ -469,6 +508,7 @@ For production (prayer reminders):
 ```
 
 ### Actual Behavior (After Fix):
+
 ```
 1. Tap "Test 10 detik"
 2. Snackbar muncul: "✅ Reminder dijadwalkan..."
@@ -483,6 +523,7 @@ For production (prayer reminders):
 ## 🛠️ Quick Fixes
 
 ### Reset Everything:
+
 ```dart
 // Di test page, tambahkan button:
 await ReminderService.cancelTestNotifications();
@@ -491,6 +532,7 @@ await _loadPendingNotifications();
 ```
 
 ### Force Re-schedule:
+
 ```dart
 // Cancel dulu, baru schedule lagi
 await ReminderService.cancelTestNotifications();
@@ -517,6 +559,7 @@ await ReminderService.scheduleTestNotification(secondsFromNow: 10);
 Lakukan semua langkah ini sebelum melaporkan issue:
 
 ### Pre-Test Setup:
+
 - [ ] App fully restarted (bukan hot reload)
 - [ ] Screen brightness >50% (prevent sleep)
 - [ ] Charger plugged in
@@ -525,12 +568,14 @@ Lakukan semua langkah ini sebelum melaporkan issue:
 - [ ] Airplane mode OFF
 
 ### Permission Check:
+
 - [ ] Settings → Apps → SiSantri → Notifications → ON
 - [ ] Settings → Apps → SiSantri → Alarms & reminders → ON
 - [ ] Settings → Apps → SiSantri → Battery → Don't optimize
 - [ ] Exact alarm permission granted (check in app)
 
 ### Debug Steps:
+
 - [ ] Tap 🐛 icon → Check debug info
 - [ ] Verify "Exact alarm permission: true"
 - [ ] Verify timezone correct
@@ -541,6 +586,7 @@ Lakukan semua langkah ini sebelum melaporkan issue:
 - [ ] Check notification bar
 
 ### If Failed:
+
 - [ ] Check pending list → ID 998 still there?
 - [ ] Try cancel → reschedule
 - [ ] Try longer interval (60 detik)
@@ -559,10 +605,12 @@ Lakukan semua langkah ini sebelum melaporkan issue:
 2. **Buka test page** → Tap 🐛 icon → Screenshot debug info
 
 3. **Test instant** → Tap "Kirim Test Instant":
+
    - ✅ Muncul → Lanjut step 4
    - ❌ Tidak muncul → Report "instant test failed"
 
 4. **Test scheduled** → Tap "Test 10 detik":
+
    - Check console immediately
    - Screenshot console log
    - Wait EXACTLY 10 detik
@@ -583,7 +631,8 @@ Lakukan semua langkah ini sebelum melaporkan issue:
 **Status:** 🔧 ENHANCED WITH FULL DEBUGGING  
 **Version:** 2.0  
 **Date:** 14 Desember 2025  
-**Updates:** 
+**Updates:**
+
 - Full plugin initialization
 - Enhanced notification channels (Importance.max)
 - Auto-cancel previous test

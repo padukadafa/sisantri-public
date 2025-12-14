@@ -179,7 +179,7 @@ class _ReminderSettingsPageState extends ConsumerState<ReminderSettingsPage> {
           const SizedBox(height: 16),
 
           // Jadwal Sholat Hari Ini
-          _buildSectionHeader('⏰ Jadwal Sholat Hari Ini'),
+          _buildSectionHeader('⏰ Hari Ini'),
           Card(
             child: Padding(
               padding: const EdgeInsets.all(16),
