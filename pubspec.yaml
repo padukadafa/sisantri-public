@@ -42,9 +42,6 @@ dependencies:
   path_provider: ^2.1.4
   open_file: ^3.5.1
 
-  # NFC/RFID
-  nfc_manager: ^4.0.2
-
   # Icons & Animations
   cupertino_icons: ^1.0.8
   font_awesome_flutter: ^10.7.0

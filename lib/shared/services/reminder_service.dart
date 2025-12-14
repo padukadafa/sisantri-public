@@ -4,8 +4,10 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'prayer_times_service.dart';
+import 'native_notification_service.dart';
 import '../models/jadwal_model.dart';
 
 /// Service untuk mengelola pengingat (reminder) sholat dan jadwal
@@ -38,11 +40,71 @@ class ReminderService {
       tz.setLocalLocation(tz.getLocation('Asia/Jakarta'));
     }
 
+    // Initialize notification plugin with proper settings
+    const AndroidInitializationSettings androidSettings = 
+        AndroidInitializationSettings('@mipmap/ic_launcher');
+    
+    const DarwinInitializationSettings iosSettings = 
+        DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
+    
+    const InitializationSettings initSettings = InitializationSettings(
+      android: androidSettings,
+      iOS: iosSettings,
+    );
+
+    await _notifications.initialize(
+      initSettings,
+      onDidReceiveNotificationResponse: (NotificationResponse response) {
+        print('📱 Notification tapped: ${response.payload}');
+      },
+    );
+
+    // Request notification permissions (Android 13+)
+    await _notifications
+        .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin>()
+        ?.requestNotificationsPermission();
+
     // Setup notification channels
     await _setupNotificationChannels();
 
+    // Request exact alarm permission for Android 12+
+    await requestExactAlarmPermission();
+
     // Load preferences dan schedule reminders
     await scheduleAllReminders();
+    
+    print('✅ ReminderService initialized successfully');
+  }
+
+  /// Request exact alarm permission for Android 12+
+  static Future<bool> requestExactAlarmPermission() async {
+    try {
+      // Check if already granted
+      if (await Permission.scheduleExactAlarm.isGranted) {
+        return true;
+      }
+
+      // Request permission
+      final status = await Permission.scheduleExactAlarm.request();
+      return status.isGranted;
+    } catch (e) {
+      // Jika error atau tidak support, return false
+      return false;
+    }
+  }
+
+  /// Check if exact alarm permission is granted
+  static Future<bool> canScheduleExactAlarms() async {
+    try {
+      return await Permission.scheduleExactAlarm.isGranted;
+    } catch (e) {
+      return false;
+    }
   }
 
   /// Setup notification channels untuk Android
@@ -51,9 +113,10 @@ class ReminderService {
       'prayer_reminders',
       'Pengingat Sholat',
       description: 'Notifikasi pengingat waktu sholat',
-      importance: Importance.high,
+      importance: Importance.max,
       enableVibration: true,
       playSound: true,
+      showBadge: true,
     );
 
     const AndroidNotificationChannel scheduleChannel =
@@ -61,22 +124,24 @@ class ReminderService {
           'schedule_reminders',
           'Pengingat Jadwal',
           description: 'Notifikasi pengingat jadwal kegiatan',
-          importance: Importance.high,
+          importance: Importance.max,
           enableVibration: true,
           playSound: true,
+          showBadge: true,
         );
 
-    await _notifications
+    final androidPlugin = _notifications
         .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin
-        >()
-        ?.createNotificationChannel(prayerChannel);
+        >();
 
-    await _notifications
-        .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >()
-        ?.createNotificationChannel(scheduleChannel);
+    if (androidPlugin != null) {
+      await androidPlugin.createNotificationChannel(prayerChannel);
+      await androidPlugin.createNotificationChannel(scheduleChannel);
+      print('✅ Notification channels created');
+    } else {
+      print('⚠️ Android plugin not available');
+    }
   }
 
   /// Schedule semua reminders (prayer + schedule)
@@ -112,33 +177,26 @@ class ReminderService {
         continue;
       }
 
-      await _scheduleNotification(
+      // USE NATIVE IMPLEMENTATION - More reliable!
+      await NativeNotificationService.scheduleExactNotification(
         id: notificationId++,
-        title:
-            '🕌 Pengingat Sholat ${PrayerTimesService.getPrayerDisplayName(prayerName)}',
-        body:
-            '$minutesBefore menit lagi masuk waktu sholat ${PrayerTimesService.getPrayerDisplayName(prayerName)}',
+        title: '🕌 Pengingat Sholat ${PrayerTimesService.getPrayerDisplayName(prayerName)}',
+        body: '$minutesBefore menit lagi masuk waktu sholat ${PrayerTimesService.getPrayerDisplayName(prayerName)}',
         scheduledTime: reminderTime,
-        channelId: 'prayer_reminders',
-        channelName: 'Pengingat Sholat',
-        payload: 'prayer_$prayerName',
       );
 
       // Schedule notifikasi tepat waktu sholat juga
       if (prayerTime.isAfter(DateTime.now())) {
-        await _scheduleNotification(
+        await NativeNotificationService.scheduleExactNotification(
           id: notificationId++,
-          title:
-              '🕌 Waktu Sholat ${PrayerTimesService.getPrayerDisplayName(prayerName)}',
-          body:
-              'Sudah masuk waktu sholat ${PrayerTimesService.getPrayerDisplayName(prayerName)}. Yuk segera ke masjid! 🤲',
+          title: '🕌 Waktu Sholat ${PrayerTimesService.getPrayerDisplayName(prayerName)}',
+          body: 'Sudah masuk waktu sholat ${PrayerTimesService.getPrayerDisplayName(prayerName)}. Yuk segera ke masjid! 🤲',
           scheduledTime: prayerTime,
-          channelId: 'prayer_reminders',
-          channelName: 'Pengingat Sholat',
-          payload: 'prayer_now_$prayerName',
         );
       }
     }
+
+    print('✅ Prayer reminders scheduled using NATIVE implementation');
 
     // Schedule untuk besok juga (recurring daily)
     await _scheduleTomorrowPrayerReminders();
@@ -170,28 +228,24 @@ class ReminderService {
         Duration(minutes: minutesBefore),
       );
 
-      await _scheduleNotification(
+      // Schedule reminder before prayer (native)
+      await NativeNotificationService.scheduleExactNotification(
         id: notificationId++,
         title:
             '🕌 Pengingat Sholat ${PrayerTimesService.getPrayerDisplayName(prayerName)}',
         body:
             '$minutesBefore menit lagi masuk waktu sholat ${PrayerTimesService.getPrayerDisplayName(prayerName)}',
         scheduledTime: reminderTime,
-        channelId: 'prayer_reminders',
-        channelName: 'Pengingat Sholat',
-        payload: 'prayer_$prayerName',
       );
 
-      await _scheduleNotification(
+      // Schedule notification at exact prayer time (native)
+      await NativeNotificationService.scheduleExactNotification(
         id: notificationId++,
         title:
             '🕌 Waktu Sholat ${PrayerTimesService.getPrayerDisplayName(prayerName)}',
         body:
             'Sudah masuk waktu sholat ${PrayerTimesService.getPrayerDisplayName(prayerName)}. Yuk segera ke masjid! 🤲',
         scheduledTime: tomorrowPrayerTime,
-        channelId: 'prayer_reminders',
-        channelName: 'Pengingat Sholat',
-        payload: 'prayer_now_$prayerName',
       );
     }
   }
@@ -271,30 +325,24 @@ class ReminderService {
             Duration(minutes: minutesBefore),
           );
 
-          // Schedule reminder sebelum kegiatan
+          // Schedule reminder sebelum kegiatan (native)
           if (reminderTime.isAfter(DateTime.now())) {
-            await _scheduleNotification(
+            await NativeNotificationService.scheduleExactNotification(
               id: notificationId++,
               title: '📅 Pengingat: ${jadwal.nama}',
               body:
                   '$minutesBefore menit lagi ada kegiatan ${jadwal.nama}${jadwal.tempat != null ? ' di ${jadwal.tempat}' : ''}',
               scheduledTime: reminderTime,
-              channelId: 'schedule_reminders',
-              channelName: 'Pengingat Jadwal',
-              payload: 'schedule_${jadwal.id}',
             );
           }
 
-          // Schedule notifikasi tepat waktu kegiatan
-          await _scheduleNotification(
+          // Schedule notifikasi tepat waktu kegiatan (native)
+          await NativeNotificationService.scheduleExactNotification(
             id: notificationId++,
             title: '📅 ${jadwal.nama}',
             body:
                 'Kegiatan ${jadwal.nama} dimulai sekarang!${jadwal.tempat != null ? ' Lokasi: ${jadwal.tempat}' : ''}',
             scheduledTime: jadwalTime,
-            channelId: 'schedule_reminders',
-            channelName: 'Pengingat Jadwal',
-            payload: 'schedule_now_${jadwal.id}',
           );
         } catch (e) {
           // Skip jadwal yang error
@@ -306,69 +354,38 @@ class ReminderService {
     }
   }
 
-  /// Helper untuk schedule single notification
-  static Future<void> _scheduleNotification({
-    required int id,
-    required String title,
-    required String body,
-    required DateTime scheduledTime,
-    required String channelId,
-    required String channelName,
-    String? payload,
-  }) async {
-    await _notifications.zonedSchedule(
-      id,
-      title,
-      body,
-      tz.TZDateTime.from(scheduledTime, tz.local),
-      NotificationDetails(
-        android: AndroidNotificationDetails(
-          channelId,
-          channelName,
-          importance: Importance.high,
-          priority: Priority.high,
-          showWhen: true,
-        ),
-        iOS: const DarwinNotificationDetails(
-          presentAlert: true,
-          presentBadge: true,
-          presentSound: true,
-        ),
-      ),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
-      uiLocalNotificationDateInterpretation:
-          UILocalNotificationDateInterpretation.absoluteTime,
-      payload: payload,
-    );
-  }
-
   /// Cancel semua prayer reminders
   static Future<void> cancelPrayerReminders() async {
-    // Cancel range of prayer notification IDs
+    // Cancel range of prayer notification IDs (using native service)
     for (
       int i = _prayerReminderIdStart;
       i < _prayerReminderIdStart + 200;
       i++
     ) {
-      await _notifications.cancel(i);
+      await NativeNotificationService.cancelNotification(i);
     }
+    print('🗑️ Cancelled all prayer reminders');
   }
 
   /// Cancel semua jadwal reminders
   static Future<void> cancelJadwalReminders() async {
-    // Cancel range of schedule notification IDs
+    // Cancel range of schedule notification IDs (using native service)
     for (
       int i = _scheduleReminderIdStart;
       i < _scheduleReminderIdStart + 1000;
       i++
     ) {
-      await _notifications.cancel(i);
+      await NativeNotificationService.cancelNotification(i);
     }
+    print('🗑️ Cancelled all schedule reminders');
   }
 
   /// Cancel semua reminders
   static Future<void> cancelAllReminders() async {
-    await _notifications.cancelAll();
+    // Cancel both prayer and schedule reminders
+    await cancelPrayerReminders();
+    await cancelJadwalReminders();
+    print('🗑️ Cancelled all reminders');
   }
 
   // === Preference Getters & Setters ===
@@ -421,5 +438,71 @@ class ReminderService {
   static Future<void> refreshReminders() async {
     await cancelAllReminders();
     await scheduleAllReminders();
+  }
+
+  /// Schedule test notification untuk beberapa detik ke depan (NATIVE)
+  static Future<void> scheduleTestNotification({
+    required int secondsFromNow,
+    String title = '⏰ Test Reminder',
+    String body = 'Test reminder dijadwalkan muncul!',
+  }) async {
+    try {
+      final scheduledTime = DateTime.now().add(Duration(seconds: secondsFromNow));
+      
+      print('🔔 Scheduling native test notification:');
+      print('   - Will trigger in: $secondsFromNow seconds');
+      print('   - Scheduled time: $scheduledTime');
+      
+      final success = await NativeNotificationService.scheduleExactNotification(
+        id: 998,
+        title: title,
+        body: body,
+        scheduledTime: scheduledTime,
+      );
+      
+      if (success) {
+        print('✅ Test notification scheduled successfully!');
+      } else {
+        print('❌ Failed to schedule test notification');
+      }
+    } catch (e) {
+      print('❌ Error scheduling test notification: $e');
+      rethrow;
+    }
+  }
+
+  /// Debug info - Print semua notification settings
+  static Future<void> printDebugInfo() async {
+    print('\n═══════════════════════════════════════');
+    print('🔍 REMINDER SERVICE DEBUG INFO');
+    print('═══════════════════════════════════════');
+    
+    // Timezone
+    print('⏰ Timezone: ${tz.local.name}');
+    print('📅 Current time: ${tz.TZDateTime.now(tz.local)}');
+    
+    // Permissions
+    final canExact = await canScheduleExactAlarms();
+    print('✅ Exact alarm permission: $canExact');
+    
+    // Pending notifications
+    final pending = await _notifications.pendingNotificationRequests();
+    print('📋 Pending notifications: ${pending.length}');
+    for (var notif in pending) {
+      print('   - ID ${notif.id}: ${notif.title}');
+    }
+    
+    // Preferences
+    final prefs = await SharedPreferences.getInstance();
+    final prayerEnabled = prefs.getBool(_keyPrayerReminderEnabled) ?? true;
+    final scheduleEnabled = prefs.getBool(_keyScheduleReminderEnabled) ?? true;
+    final prayerMinutes = prefs.getInt(_keyPrayerReminderMinutes) ?? 10;
+    final scheduleMinutes = prefs.getInt(_keyScheduleReminderMinutes) ?? 15;
+    
+    print('🕌 Prayer reminder: $prayerEnabled ($prayerMinutes min before)');
+    print('📅 Schedule reminder: $scheduleEnabled ($scheduleMinutes min before)');
+    print('🔔 Using native AlarmManager for reliable scheduling');
+    
+    print('═══════════════════════════════════════\n');
   }
 }

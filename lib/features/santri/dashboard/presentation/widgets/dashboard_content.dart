@@ -11,7 +11,6 @@ import '../providers/dashboard_providers.dart';
 import '../providers/stats_providers.dart';
 import '../providers/notification_providers.dart';
 import 'dashboard_notifications_section.dart';
-import 'dashboard_stats_cards.dart';
 import 'dashboard_additional_stats.dart';
 import 'dashboard_recent_pengumuman.dart';
 import 'prayer_times_widget.dart';
@@ -25,7 +24,6 @@ class DashboardContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = data['user'] as UserModel?;
-    final todayPresensi = data['todayPresensi'];
     final recentPengumuman =
         data['recentPengumuman'] as List<AnnouncementModel>? ?? [];
 

@@ -2,15 +2,10 @@ const admin = require("firebase-admin");
 const XLSX = require("xlsx");
 const { v4: uuidv4 } = require("uuid");
 const path = require("path");
-
-admin.initializeApp({
-  credential: admin.credential.cert(
-    require("./belajar-login-system-firebase-adminsdk-vbat2-5f415066e7.json")
-  ),
-});
+const { Timestamp, db } = require("./config/firebase");
 
 const auth = admin.auth();
-const firestore = admin.firestore();
+const firestore = db;
 async function generateUniqueEmail(name, auth) {
   function baseEmail() {
     const parts = name.toLowerCase().split(/\s+/);
@@ -364,24 +359,98 @@ async function fixPresensi() {
 async function fixWeekly() {
   const aggregates = firestore.collection("presensi_aggregates");
   const snapshot = await aggregates
-    .where("periode", "==", "weekly")
-    .where("periodeKey", "==", "2025-W50")
+    .where("periode", "==", "yearly")
+    .where("periodeKey", "==", "2025")
     .get();
+  const jadwal = await firestore
+    .collection("jadwal")
+    .where("tanggal", ">=", Timestamp.fromDate(new Date("2025-11-30")))
+    .where("tanggal", "<=", Timestamp.fromDate(new Date("2025-12-14")))
+    .get();
+  const presensi = [];
 
+  for (const doc of jadwal.docs) {
+    const data = doc.data();
+    const presensiSnapshot = await firestore
+      .collection("presensi")
+      .where("jadwalId", "==", doc.id)
+      .get();
+    presensiSnapshot.forEach((presensiDoc) => {
+      presensi.push(presensiDoc);
+    });
+
+    // jadwal.forEach((jadwalDoc) => {
+    //   console.log(
+    //     `Jadwal: ${jadwalDoc.id} - ${JSON.stringify(jadwalDoc.data())}`
+    //   );
+    // });
+
+    // let totalHadir = 0;
+    // let totalIzin = 0;
+    // let totalSakit = 0;
+    // let totalAlpha = 0;
+
+    // presensi.forEach((presensiDoc) => {
+    //   const presensiData = presensiDoc.data();
+    //   if (presensiData.status === "hadir") {
+    //     totalHadir += 1;
+    //   } else if (presensiData.status === "izin") {
+    //     totalIzin += 1;
+    //   } else if (presensiData.status === "sakit") {
+    //     totalSakit += 1;
+    //   } else if (presensiData.status === "alpha") {
+    //     totalAlpha += 1;
+    //   }
+    // });
+    // print(totalHadir, totalIzin, totalSakit, totalAlpha);
+
+    // if (
+    //   data.totalAlpha + data.totalHadir + data.totalIzin + data.totalSakit >
+    //   9
+    // ) {
+    //   await aggregates.doc(doc.id).update({
+    //     totalAlpha: 9 - (data.totalHadir + data.totalIzin + data.totalSakit),
+    //   });
+    //   console.log(`Updated ${doc.id}`);
+    // }
+    // await aggregates.doc(doc.id).update({
+    //   totalPoin: data.totalHadir,
+    // });
+  }
   for (const doc of snapshot.docs) {
     const data = doc.data();
-    if (
-      data.totalAlpha + data.totalHadir + data.totalIzin + data.totalSakit >
-      9
-    ) {
-      await aggregates.doc(doc.id).update({
-        totalAlpha: 9 - (data.totalHadir + data.totalIzin + data.totalSakit),
+    let totalHadir = 0;
+    let totalIzin = 0;
+    let totalSakit = 0;
+    let totalAlpha = 0;
+
+    presensi
+      .filter((e) => e.data().userId === data.userId)
+      .forEach((presensiDoc) => {
+        const presensiData = presensiDoc.data();
+        if (presensiData.userId === data.userId) {
+          if (presensiData.status === "hadir") {
+            totalHadir += 1;
+          } else if (presensiData.status === "izin") {
+            totalIzin += 1;
+          } else if (presensiData.status === "sakit") {
+            totalSakit += 1;
+          } else if (presensiData.status === "alpha") {
+            totalAlpha += 1;
+          }
+        }
       });
-      console.log(`Updated ${doc.id}`);
-    }
+
     await aggregates.doc(doc.id).update({
-      totalPoin: data.totalHadir,
+      totalHadir,
+      totalIzin,
+      totalSakit,
+      totalAlpha,
+      totalPoin: totalHadir,
     });
+    console.log(
+      `Updated ${doc.id} - H:${totalHadir} I:${totalIzin} S:${totalSakit} A:${totalAlpha}`
+    );
   }
 }
 fixWeekly();

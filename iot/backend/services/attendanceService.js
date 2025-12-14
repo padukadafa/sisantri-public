@@ -1,8 +1,5 @@
 const { db, Timestamp, FieldValue } = require("../config/firebase");
-const {
-  getWIBDate,
-  getAllPeriodeKeys
-} = require("../helper/helper");
+const { getWIBDate, getAllPeriodeKeys } = require("../helper/helper");
 
 /**
  * Get active schedule for today
@@ -10,8 +7,8 @@ const {
  */
 async function getTodaySchedule() {
   try {
-    const today =  getWIBDate();
-    
+    const today = getWIBDate();
+
     today.setHours(0, 0, 0, 0);
     const tomorrow = getWIBDate();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -28,8 +25,11 @@ async function getTodaySchedule() {
     if (snapshot.empty) {
       return null;
     }
-
-    const doc = snapshot.docs[0];
+    const doc = snapshot.docs.find(
+      (data) =>
+        checkScheduleTime(data.data().waktuMulai, data.data().waktuSelesai)
+          .isWithinSchedule
+    );
     const data = doc.data();
     const scheduleTime = checkScheduleTime(data.waktuMulai, data.waktuSelesai);
     return {
@@ -50,7 +50,7 @@ async function getTodaySchedule() {
  */
 async function getTodayAttendance(jadwalId, userId) {
   try {
-    const today =getWIBDate();
+    const today = getWIBDate();
     today.setHours(0, 0, 0, 0);
     const tomorrow = getWIBDate();
     tomorrow.setDate(tomorrow.getDate() + 1);
@@ -119,7 +119,7 @@ function checkScheduleTime(waktuMulai, waktuSelesai) {
   } catch (error) {
     console.error("Error checking schedule time:", error);
     return {
-      isWithinSchedule: true,
+      isWithinSchedule: false,
       status: "unknown",
       message: "Tidak dapat memeriksa waktu jadwal",
     };
@@ -135,60 +135,66 @@ function checkScheduleTime(waktuMulai, waktuSelesai) {
  * @param {string|null} oldStatus - Previous status if updating
  * @returns {Promise<void>}
  */
-async function updateAggregates(userId, tanggal, status, poin, oldStatus = null) {
+async function updateAggregates(
+  userId,
+  tanggal,
+  status,
+  poin,
+  oldStatus = null
+) {
   try {
     const periodeKeys = getAllPeriodeKeys(tanggal);
-    const periods = ['daily', 'weekly', 'monthly', 'semester', 'yearly'];
+    const periods = ["daily", "weekly", "monthly", "semester", "yearly"];
     const batch = db.batch();
 
     for (const periode of periods) {
       const periodeKey = periodeKeys[periode];
       const docId = `${userId}_${periode}_${periodeKey}`;
-      const aggregateRef = db.collection('presensi_aggregates').doc(docId);
-      
+      const aggregateRef = db.collection("presensi_aggregates").doc(docId);
+
       // Check if document exists
       const doc = await aggregateRef.get();
-      
+
       const updateData = {};
-      
+
       // Decrement old status if exists
       if (oldStatus) {
         switch (oldStatus) {
-          case 'hadir':
+          case "hadir":
             updateData.totalHadir = FieldValue.increment(-1);
             break;
-          case 'izin':
+          case "izin":
             updateData.totalIzin = FieldValue.increment(-1);
             break;
-          case 'sakit':
+          case "sakit":
             updateData.totalSakit = FieldValue.increment(-1);
             break;
-          case 'alpha':
+          case "alpha":
             updateData.totalAlpha = FieldValue.increment(-1);
             break;
         }
       }
-      
+
       // Increment new status
       switch (status) {
-        case 'hadir':
+        case "hadir":
           updateData.totalHadir = FieldValue.increment(1);
           break;
-        case 'izin':
+        case "izin":
           updateData.totalIzin = FieldValue.increment(1);
           break;
-        case 'sakit':
+        case "sakit":
           updateData.totalSakit = FieldValue.increment(1);
           break;
-        case 'alpha':
+        case "alpha":
           updateData.totalAlpha = FieldValue.increment(1);
           break;
       }
-      
+
       // Update points
       updateData.totalPoin = FieldValue.increment(poin);
       updateData.updatedAt = Timestamp.fromDate(getWIBDate());
-      
+
       if (doc.exists) {
         // Update existing document
         batch.update(aggregateRef, updateData);
@@ -204,16 +210,16 @@ async function updateAggregates(userId, tanggal, status, poin, oldStatus = null)
           totalAlpha: 0,
           totalPoin: 0,
           createdAt: Timestamp.now(),
-          ...updateData
+          ...updateData,
         };
         batch.set(aggregateRef, initialData);
       }
     }
-    
+
     await batch.commit();
-    console.log('Aggregates updated successfully for user:', userId);
+    console.log("Aggregates updated successfully for user:", userId);
   } catch (error) {
-    console.error('Error updating aggregates:', error);
+    console.error("Error updating aggregates:", error);
     throw error;
   }
 }
@@ -236,7 +242,7 @@ async function createAttendance(attendanceData, poin = 1) {
     });
 
     const doc = await docRef.get();
-    
+
     // Update aggregates
     const tanggal = attendanceData.tanggal || now.toDate();
     await updateAggregates(
@@ -246,16 +252,16 @@ async function createAttendance(attendanceData, poin = 1) {
       poin,
       null // no old status for new record
     );
-    
+
     return {
       id: doc.id,
       ...doc.data(),
     };
-    
   } catch (error) {
     throw new Error(`Error creating attendance: ${error.message}`);
   }
-}/**
+}
+/**
  * Log device activity
  * @param {Object} logData - Log data
  * @returns {Promise<void>}
