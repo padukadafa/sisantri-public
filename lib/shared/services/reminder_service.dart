@@ -25,6 +25,8 @@ class ReminderService {
   static const String _keyScheduleReminderEnabled = 'schedule_reminder_enabled';
   static const String _keyPrayerReminderMinutes = 'prayer_reminder_minutes';
   static const String _keyScheduleReminderMinutes = 'schedule_reminder_minutes';
+  static const String _keyLastPrayerScheduleUpdate =
+      'last_prayer_schedule_update';
 
   /// Initialize reminder service
   static Future<void> initialize() async {
@@ -75,6 +77,9 @@ class ReminderService {
 
     // Request exact alarm permission for Android 12+
     await requestExactAlarmPermission();
+
+    // Check dan update jadwal sholat otomatis
+    await checkAndUpdatePrayerSchedule();
 
     // Load preferences dan schedule reminders
     await scheduleAllReminders();
@@ -149,6 +154,124 @@ class ReminderService {
   static Future<void> scheduleAllReminders() async {
     await schedulePrayerReminders();
     await scheduleJadwalReminders();
+  }
+
+  /// Check dan update jadwal sholat otomatis
+  /// - Pertama kali buka aplikasi: jadwalkan 1 bulan ke depan
+  /// - Setiap tanggal 1: update jadwal untuk bulan baru
+  static Future<void> checkAndUpdatePrayerSchedule() async {
+    final prefs = await SharedPreferences.getInstance();
+    final lastUpdateStr = prefs.getString(_keyLastPrayerScheduleUpdate);
+    final now = DateTime.now();
+
+    bool needsUpdate = false;
+
+    if (lastUpdateStr == null) {
+      // Pertama kali buka aplikasi
+      print(
+        '🕌 Pertama kali membuka aplikasi - jadwalkan sholat 1 bulan ke depan',
+      );
+      needsUpdate = true;
+    } else {
+      final lastUpdate = DateTime.parse(lastUpdateStr);
+
+      // Check apakah sudah ganti bulan dan hari ini tanggal 1
+      if (now.month != lastUpdate.month || now.year != lastUpdate.year) {
+        if (now.day == 1) {
+          print('🕌 Tanggal 1 - update jadwal sholat untuk bulan baru');
+          needsUpdate = true;
+        }
+      }
+    }
+
+    if (needsUpdate) {
+      await scheduleMonthlyPrayerReminders();
+      await prefs.setString(
+        _keyLastPrayerScheduleUpdate,
+        now.toIso8601String(),
+      );
+      print('✅ Jadwal sholat 1 bulan berhasil dijadwalkan');
+    }
+  }
+
+  /// Schedule pengingat sholat untuk 1 bulan ke depan
+  static Future<void> scheduleMonthlyPrayerReminders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final enabled = prefs.getBool(_keyPrayerReminderEnabled) ?? true;
+
+    if (!enabled) {
+      return;
+    }
+
+    final minutesBefore = prefs.getInt(_keyPrayerReminderMinutes) ?? 10;
+    final now = DateTime.now();
+    int notificationId = _prayerReminderIdStart;
+
+    // Loop untuk 30 hari ke depan
+    for (int dayOffset = 0; dayOffset < 30; dayOffset++) {
+      final targetDate = DateTime(now.year, now.month, now.day + dayOffset);
+      final prayerTimes = _getPrayerTimesForDate(targetDate);
+
+      for (var entry in prayerTimes.entries) {
+        final prayerName = entry.key;
+        final prayerTime = entry.value;
+        final reminderTime = prayerTime.subtract(
+          Duration(minutes: minutesBefore),
+        );
+
+        // Skip jika waktu sudah lewat
+        if (reminderTime.isBefore(DateTime.now())) {
+          continue;
+        }
+
+        // Schedule reminder sebelum waktu sholat
+        await NativeNotificationService.scheduleExactNotification(
+          id: notificationId++,
+          title:
+              '🕌 Pengingat Sholat ${PrayerTimesService.getPrayerDisplayName(prayerName)}',
+          body:
+              '$minutesBefore menit lagi masuk waktu sholat ${PrayerTimesService.getPrayerDisplayName(prayerName)}',
+          scheduledTime: reminderTime,
+        );
+
+        // Schedule notifikasi tepat waktu sholat
+        if (prayerTime.isAfter(DateTime.now())) {
+          await NativeNotificationService.scheduleExactNotification(
+            id: notificationId++,
+            title:
+                '🕌 Waktu Sholat ${PrayerTimesService.getPrayerDisplayName(prayerName)}',
+            body:
+                'Sudah masuk waktu sholat ${PrayerTimesService.getPrayerDisplayName(prayerName)}. Yuk segera ke masjid! 🤲',
+            scheduledTime: prayerTime,
+          );
+        }
+      }
+    }
+
+    print('✅ Prayer reminders untuk 1 bulan (30 hari) berhasil dijadwalkan');
+  }
+
+  /// Get prayer times untuk tanggal tertentu
+  static Map<String, DateTime> _getPrayerTimesForDate(DateTime date) {
+    // Get today's prayer times as template
+    final prayerTimes = PrayerTimesService.getTodayPrayerTimes();
+
+    // Adjust to target date (keeping the time, changing the date)
+    final result = <String, DateTime>{};
+    for (var entry in prayerTimes.entries) {
+      final originalTime = entry.value;
+      final adjustedTime = DateTime(
+        date.year,
+        date.month,
+        date.day,
+        originalTime.hour,
+        originalTime.minute,
+        originalTime.second,
+      );
+      result[entry.key] = adjustedTime;
+    }
+
+    return result;
   }
 
   /// Schedule pengingat sholat

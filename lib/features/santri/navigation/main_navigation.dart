@@ -22,7 +22,6 @@ class MainNavigation extends ConsumerWidget {
     final List<Widget> pages = [
       const SantriDashboardPage(),
       const JadwalPage(),
-      const PresensiPage(),
       const AggregateLeaderboardPage(),
       const ProfilePage(),
     ];
@@ -56,11 +55,6 @@ class MainNavigation extends ConsumerWidget {
             icon: Icon(Icons.schedule_outlined),
             activeIcon: Icon(Icons.schedule),
             label: 'Jadwal',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.checklist_outlined),
-            activeIcon: Icon(Icons.checklist),
-            label: 'Presensi',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.leaderboard_outlined),
