@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:sisantri/shared/models/user_model.dart';
+import 'package:sisantri/features/admin/attendance_management/presentation/pages/santri_report_detail_page.dart';
 
 /// Widget untuk menampilkan ringkasan presensi per santri
 class UserSummaryCard extends StatefulWidget {
@@ -103,6 +104,22 @@ class _UserSummaryCardState extends State<UserSummaryCard> {
                         color: Colors.grey,
                       ),
                     ],
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton(
+                    icon: const Icon(Icons.search, size: 18),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => SantriReportDetailPage(
+                            userId: widget.user.id,
+                            nama: widget.user.nama,
+                          ),
+                        ),
+                      );
+                    },
+                    tooltip: 'Lihat Detail',
                   ),
                 ],
               ),
