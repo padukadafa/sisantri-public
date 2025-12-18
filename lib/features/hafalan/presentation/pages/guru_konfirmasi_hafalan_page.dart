@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../shared/auth/presentation/providers/auth_provider.dart';
+import '../../../dewan_guru/navigation/dewan_guru_navigation.dart';
 import '../../domain/entities/hafalan_progress.dart';
 import '../providers/hafalan_provider.dart';
 import '../widgets/konfirmasi_hafalan_dialog.dart';
@@ -59,7 +59,7 @@ class GuruKonfirmasiHafalanPage extends ConsumerWidget {
 
           return RefreshIndicator(
             onRefresh: () async {
-              ref.refresh(pendingConfirmationsProvider);
+              ref.invalidate(pendingConfirmationsProvider);
             },
             child: ListView.builder(
               padding: const EdgeInsets.all(16),
@@ -162,30 +162,29 @@ class GuruKonfirmasiHafalanPage extends ConsumerWidget {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      materi.judul,
+                                      materi.nama,
                                       style: const TextStyle(
                                         fontWeight: FontWeight.w600,
                                         fontSize: 15,
                                       ),
                                     ),
-                                    if (materi.tipe == 'alquran')
-                                      Text(
-                                        '${materi.suratName} ayat ${materi.ayatStart}-${materi.ayatEnd}',
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: Colors.grey[600],
-                                        ),
-                                      )
-                                    else if (materi.arabText != null)
-                                      Text(
-                                        materi.arabText!,
-                                        style: TextStyle(
-                                          fontSize: 13,
-                                          color: Colors.grey[600],
-                                        ),
-                                        maxLines: 1,
-                                        overflow: TextOverflow.ellipsis,
-                                        textDirection: TextDirection.rtl,
+                                    if (materi.link != null)
+                                      Row(
+                                        children: [
+                                          const Icon(Icons.link, size: 12),
+                                          const SizedBox(width: 4),
+                                          Expanded(
+                                            child: Text(
+                                              materi.link!,
+                                              style: TextStyle(
+                                                fontSize: 13,
+                                                color: Colors.grey[600],
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ),
+                                        ],
                                       ),
                                   ],
                                 ),

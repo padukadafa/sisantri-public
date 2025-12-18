@@ -4,16 +4,9 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 /// Tipe: alquran (auto-generated), doa, tambahan
 class HafalanMateri {
   final String id;
-  final String judul;
+  final String nama; // Nama materi
   final String tipe; // 'alquran', 'doa', 'tambahan'
-  final String? konten; // Isi doa/tambahan, null untuk alquran
-  final String? suratName; // Untuk alquran: nama surat
-  final int? suratNumber; // Untuk alquran: nomor surat
-  final int? ayatStart; // Untuk alquran: ayat mulai
-  final int? ayatEnd; // Untuk alquran: ayat selesai
-  final String? arabText; // Teks arab untuk doa
-  final String? latinText; // Teks latin untuk doa
-  final String? translation; // Terjemahan
+  final String? link; // Link ke resource (PDF, video, dll)
   final DateTime createdAt;
   final String? createdBy; // Admin yang membuat
   final bool isActive;
@@ -21,16 +14,9 @@ class HafalanMateri {
 
   const HafalanMateri({
     required this.id,
-    required this.judul,
+    required this.nama,
     required this.tipe,
-    this.konten,
-    this.suratName,
-    this.suratNumber,
-    this.ayatStart,
-    this.ayatEnd,
-    this.arabText,
-    this.latinText,
-    this.translation,
+    this.link,
     required this.createdAt,
     this.createdBy,
     this.isActive = true,
@@ -41,16 +27,9 @@ class HafalanMateri {
     final data = doc.data() as Map<String, dynamic>;
     return HafalanMateri(
       id: doc.id,
-      judul: data['judul'] ?? '',
+      nama: data['nama'] ?? '',
       tipe: data['tipe'] ?? '',
-      konten: data['konten'],
-      suratName: data['suratName'],
-      suratNumber: data['suratNumber'],
-      ayatStart: data['ayatStart'],
-      ayatEnd: data['ayatEnd'],
-      arabText: data['arabText'],
-      latinText: data['latinText'],
-      translation: data['translation'],
+      link: data['link'],
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       createdBy: data['createdBy'],
       isActive: data['isActive'] ?? true,
@@ -60,16 +39,9 @@ class HafalanMateri {
 
   Map<String, dynamic> toFirestore() {
     return {
-      'judul': judul,
+      'nama': nama,
       'tipe': tipe,
-      'konten': konten,
-      'suratName': suratName,
-      'suratNumber': suratNumber,
-      'ayatStart': ayatStart,
-      'ayatEnd': ayatEnd,
-      'arabText': arabText,
-      'latinText': latinText,
-      'translation': translation,
+      'link': link,
       'createdAt': Timestamp.fromDate(createdAt),
       'createdBy': createdBy,
       'isActive': isActive,
@@ -79,16 +51,9 @@ class HafalanMateri {
 
   HafalanMateri copyWith({
     String? id,
-    String? judul,
+    String? nama,
     String? tipe,
-    String? konten,
-    String? suratName,
-    int? suratNumber,
-    int? ayatStart,
-    int? ayatEnd,
-    String? arabText,
-    String? latinText,
-    String? translation,
+    String? link,
     DateTime? createdAt,
     String? createdBy,
     bool? isActive,
@@ -96,16 +61,9 @@ class HafalanMateri {
   }) {
     return HafalanMateri(
       id: id ?? this.id,
-      judul: judul ?? this.judul,
+      nama: nama ?? this.nama,
       tipe: tipe ?? this.tipe,
-      konten: konten ?? this.konten,
-      suratName: suratName ?? this.suratName,
-      suratNumber: suratNumber ?? this.suratNumber,
-      ayatStart: ayatStart ?? this.ayatStart,
-      ayatEnd: ayatEnd ?? this.ayatEnd,
-      arabText: arabText ?? this.arabText,
-      latinText: latinText ?? this.latinText,
-      translation: translation ?? this.translation,
+      link: link ?? this.link,
       createdAt: createdAt ?? this.createdAt,
       createdBy: createdBy ?? this.createdBy,
       isActive: isActive ?? this.isActive,

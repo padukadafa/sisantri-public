@@ -330,6 +330,7 @@ class PresensiAggregateService {
 
       int totalUsers = querySnapshot.docs.length;
       int totalHadir = 0;
+      int totalTerlambat = 0;
       int totalIzin = 0;
       int totalSakit = 0;
       int totalAlpha = 0;
@@ -338,20 +339,23 @@ class PresensiAggregateService {
       for (final doc in querySnapshot.docs) {
         final data = doc.data();
         totalHadir += (data['totalHadir'] as int? ?? 0);
+        totalTerlambat += (data['totalTerlambat'] as int? ?? 0);
         totalIzin += (data['totalIzin'] as int? ?? 0);
         totalSakit += (data['totalSakit'] as int? ?? 0);
         totalAlpha += (data['totalAlpha'] as int? ?? 0);
         totalPoin += (data['totalPoin'] as int? ?? 0);
       }
 
-      final totalPresensi = totalHadir + totalIzin + totalSakit + totalAlpha;
+      final totalPresensi =
+          totalHadir + totalTerlambat + totalIzin + totalSakit + totalAlpha;
       final persentaseKehadiran = totalPresensi > 0
-          ? (totalHadir / totalPresensi) * 100
+          ? ((totalHadir + totalTerlambat) / totalPresensi) * 100
           : 0.0;
 
       return {
         'totalUsers': totalUsers,
         'totalHadir': totalHadir,
+        'totalTerlambat': totalTerlambat,
         'totalIzin': totalIzin,
         'totalSakit': totalSakit,
         'totalAlpha': totalAlpha,

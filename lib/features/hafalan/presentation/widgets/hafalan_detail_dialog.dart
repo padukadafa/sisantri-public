@@ -41,7 +41,7 @@ class HafalanDetailDialog extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          materi.judul,
+                          materi.nama,
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
@@ -73,36 +73,10 @@ class HafalanDetailDialog extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Arab text
-                    if (materi.arabText != null) ...[
+                    // Link
+                    if (materi.link != null) ...[
                       const Text(
-                        'Teks Arab',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.green[50],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          materi.arabText!,
-                          style: const TextStyle(fontSize: 24, height: 2),
-                          textAlign: TextAlign.right,
-                          textDirection: TextDirection.rtl,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-
-                    // Latin text
-                    if (materi.latinText != null) ...[
-                      const Text(
-                        'Latin',
+                        'Link Resource',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 14,
@@ -115,36 +89,20 @@ class HafalanDetailDialog extends ConsumerWidget {
                           color: Colors.blue[50],
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Text(
-                          materi.latinText!,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
-
-                    // Translation
-                    if (materi.translation != null) ...[
-                      const Text(
-                        'Terjemahan',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.orange[50],
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          materi.translation!,
-                          style: const TextStyle(fontSize: 14),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.link, color: Colors.blue),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                materi.link!,
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.blue,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -350,8 +308,8 @@ class HafalanDetailDialog extends ConsumerWidget {
           .read(progressNotifierProvider.notifier)
           .mulaiHafalan(santriId, materi.id);
 
-      ref.refresh(progressWithMateriProvider(santriId));
-      ref.refresh(statisticsBySantriProvider(santriId));
+      ref.invalidate(progressWithMateriProvider(santriId));
+      ref.invalidate(statisticsBySantriProvider(santriId));
 
       if (context.mounted) {
         Navigator.pop(context);

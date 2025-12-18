@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../shared/auth/presentation/providers/auth_provider.dart';
+import '../../../dewan_guru/navigation/dewan_guru_navigation.dart';
 import '../../domain/entities/hafalan_progress.dart';
 import '../providers/hafalan_provider.dart';
 import '../widgets/hafalan_detail_dialog.dart';
@@ -148,8 +148,8 @@ class SantriHafalanPage extends ConsumerWidget {
 
                 return RefreshIndicator(
                   onRefresh: () async {
-                    ref.refresh(progressWithMateriProvider(user.uid));
-                    ref.refresh(statisticsBySantriProvider(user.uid));
+                    ref.invalidate(progressWithMateriProvider(user.uid));
+                    ref.invalidate(statisticsBySantriProvider(user.uid));
                   },
                   child: ListView.builder(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -194,7 +194,7 @@ class SantriHafalanPage extends ConsumerWidget {
                                             CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            materi.judul,
+                                            materi.nama,
                                             style: const TextStyle(
                                               fontWeight: FontWeight.bold,
                                               fontSize: 16,

@@ -78,7 +78,7 @@ class _KonfirmasiHafalanDialogState
                         const SizedBox(width: 8),
                         Expanded(
                           child: Text(
-                            widget.materi.judul,
+                            widget.materi.nama,
                             style: const TextStyle(fontSize: 13),
                           ),
                         ),
@@ -249,7 +249,7 @@ class _KonfirmasiHafalanDialogState
           );
 
       // Refresh data
-      ref.refresh(pendingConfirmationsProvider);
+      ref.invalidate(pendingConfirmationsProvider);
 
       if (mounted) {
         Navigator.pop(context);

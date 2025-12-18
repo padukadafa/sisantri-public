@@ -1,17 +1,21 @@
 # Fitur Hafalan - Dokumentasi
 
 ## Overview
+
 Fitur hafalan adalah sistem untuk mengelola dan melacak progress hafalan santri, mencakup Al-Quran, doa-doa, dan materi tambahan.
 
 ## Alur Fitur
 
 ### 1. **Daftar Materi Hafalan**
+
 Ada 3 tipe materi:
+
 - **Al-Quran**: Otomatis terbuat (akan di-generate)
 - **Doa**: Ditambahkan manual oleh admin
 - **Tambahan**: Hadist, surat pendek, dll - ditambahkan manual oleh admin
 
 ### 2. **Flow Hafalan**
+
 1. **Santri** melihat daftar materi hafalan di menu "Hafalan Saya"
 2. **Santri** mulai hafalan dengan menekan tombol "Mulai Hafalan"
 3. Status berubah menjadi "Proses" (menunggu konfirmasi guru)
@@ -52,6 +56,7 @@ lib/features/hafalan/
 ## Firestore Collections
 
 ### Collection: `hafalan_materi`
+
 ```json
 {
   "id": "auto-generated",
@@ -72,6 +77,7 @@ lib/features/hafalan/
 ```
 
 ### Collection: `hafalan_progress`
+
 ```json
 {
   "id": "auto-generated",
@@ -92,17 +98,20 @@ lib/features/hafalan/
 ## Menu Akses
 
 ### Admin
+
 - **Dashboard Admin** > **Manajemen Hafalan**
   - Tambah/Edit/Hapus materi doa dan tambahan
   - Lihat daftar semua materi
 
 ### Guru (Dewan Guru)
+
 - **Dashboard Guru** > **Konfirmasi Hafalan**
   - Lihat list hafalan pending (status "proses")
   - Konfirmasi hafalan dengan nilai dan catatan
   - Set status: Lulus atau Perlu Perbaikan
 
 ### Santri
+
 - **Dashboard Santri** > Card **"Hafalan Saya"**
   - Lihat daftar materi hafalan
   - Lihat progress (statistik: total, selesai, proses)
@@ -112,18 +121,21 @@ lib/features/hafalan/
 ## Features
 
 ### Admin Features
+
 ✅ CRUD materi doa dan tambahan
 ✅ Lihat materi berdasarkan tipe (Al-Quran, Doa, Tambahan)
 ✅ Soft delete materi (isActive = false)
 ✅ Urutan materi
 
 ### Guru Features
+
 ✅ Lihat list hafalan pending
 ✅ Konfirmasi hafalan dengan nilai dan catatan
 ✅ Approve (Lulus) atau Reject (Perlu Perbaikan)
 ✅ Filter hafalan by santri
 
 ### Santri Features
+
 ✅ Lihat daftar semua materi
 ✅ Statistik progress (total, selesai, proses)
 ✅ Mulai hafalan
@@ -134,22 +146,27 @@ lib/features/hafalan/
 ## TODO - Future Enhancements
 
 1. **Generate Al-Quran Automatically**
+
    - Buat script untuk generate materi Al-Quran otomatis
    - Data surat dan ayat bisa dari API atau JSON file
 
 2. **Audio Recording**
+
    - Santri bisa merekam hafalan mereka
    - Guru bisa dengarkan rekaman sebelum konfirmasi
 
 3. **Target Hafalan**
+
    - Admin bisa set target hafalan per santri
    - Dashboard menampilkan progress terhadap target
 
 4. **Reminder**
+
    - Notifikasi untuk santri yang belum mulai hafalan
    - Notifikasi untuk guru ada hafalan pending
 
 5. **Report & Analytics**
+
    - Report hafalan per santri
    - Export to PDF
    - Grafik progress hafalan

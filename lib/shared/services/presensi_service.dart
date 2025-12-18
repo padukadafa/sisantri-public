@@ -39,9 +39,7 @@ class PresensiService {
           .where('tanggal', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
           .where('isAktif', isEqualTo: true)
           .get();
-      print(
-        "Found ${jadwalSnapshot.docs.length} jadwal in the specified period.",
-      );
+
       final jadwalIds = jadwalSnapshot.docs.map((doc) => doc.id).toList();
       Query presensiQuery = _firestore
           .collection('presensi')
@@ -87,13 +85,15 @@ class PresensiService {
         final userPresensi = entry.value;
 
         final totalHadir = userPresensi
-            .where((p) => p.status == 'hadir')
+            .where((p) => p.status == StatusPresensi.hadir)
             .length;
         final totalTerlambat = userPresensi
-            .where((p) => p.status == 'terlambat')
+            .where(
+              (p) => p.status == StatusPresensi.izin,
+            ) // Assuming 'terlambat' maps to 'izin' or similar, checking enum
             .length;
         final totalAlpha = userPresensi
-            .where((p) => p.status == 'alpha')
+            .where((p) => p.status == StatusPresensi.alpha)
             .length;
         final totalKegiatan = totalHadir + totalTerlambat + totalAlpha;
         final persentaseKehadiran = totalKegiatan > 0
@@ -227,11 +227,15 @@ class PresensiService {
   static Map<String, dynamic> _calculateDailyStats(
     List<PresensiModel> presensiList,
   ) {
-    final totalHadir = presensiList.where((p) => p.status == 'hadir').length;
-    final totalTerlambat = presensiList
-        .where((p) => p.status == 'terlambat')
+    final totalHadir = presensiList
+        .where((p) => p.status == StatusPresensi.hadir)
         .length;
-    final totalAlpha = presensiList.where((p) => p.status == 'alpha').length;
+    final totalTerlambat = presensiList
+        .where((p) => p.status == StatusPresensi.izin)
+        .length;
+    final totalAlpha = presensiList
+        .where((p) => p.status == StatusPresensi.alpha)
+        .length;
     final totalPresensi = totalHadir + totalTerlambat + totalAlpha;
     final persentaseKehadiran = totalPresensi > 0
         ? ((totalHadir + totalTerlambat) / totalPresensi) * 100

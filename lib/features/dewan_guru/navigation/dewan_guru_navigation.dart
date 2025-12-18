@@ -8,6 +8,7 @@ import 'package:sisantri/shared/models/presensi_model.dart';
 import 'package:sisantri/shared/models/user_model.dart';
 import 'package:sisantri/shared/services/auth_service.dart';
 import 'package:sisantri/shared/services/presensi_service.dart';
+import 'package:sisantri/shared/services/presensi_aggregate_service.dart';
 import 'package:sisantri/features/shared/jadwal/presentation/jadwal_page.dart';
 import 'package:sisantri/features/santri/presensi/presentation/pages/presensi_summary_page.dart';
 import 'package:sisantri/features/santri/leaderboard/presentation/leaderboard_page.dart';
@@ -49,15 +50,41 @@ final dewaGuruDashboardStatsProvider = FutureProvider<Map<String, dynamic>>((
   ref,
 ) async {
   try {
-    final summary = await PresensiService.getPresensiSummary();
-    final todayPresensi = await PresensiService.getPresensiToday();
+    final now = DateTime.now();
+
+    // Get Daily Stats (Today)
+    final dailyKey = PresensiAggregateService.getPeriodeKey('daily', now);
+    final dailyStats = await PresensiAggregateService.getStatistics(
+      periode: 'daily',
+      periodeKey: dailyKey,
+    );
+
+    // Get Weekly Stats (This Week)
+    final weeklyKey = PresensiAggregateService.getPeriodeKey('weekly', now);
+    final weeklyStats = await PresensiAggregateService.getStatistics(
+      periode: 'weekly',
+      periodeKey: weeklyKey,
+    );
+
     final santriList = await AuthService.getSantriList();
+    final totalSantri = santriList.length;
+    final activeSantri = santriList.where((s) => s.statusAktif).length;
+
+    // Calculate present count from aggregates
+    final presentCount =
+        (dailyStats['totalHadir'] as int? ?? 0) +
+        (dailyStats['totalTerlambat'] as int? ?? 0);
+
+    final attendancePercentage =
+        dailyStats['persentaseKehadiran'] as double? ?? 0.0;
 
     return {
-      'summary': summary,
-      'todayPresensi': todayPresensi,
-      'totalSantri': santriList.length,
-      'activeSantri': santriList.where((s) => s.statusAktif).length,
+      'summary': {'today': dailyStats, 'thisWeek': weeklyStats},
+      'todayPresensi': <PresensiModel>[], // Empty list as we use aggregates
+      'totalSantri': totalSantri,
+      'activeSantri': activeSantri,
+      'presentCount': presentCount,
+      'attendancePercentage': attendancePercentage,
     };
   } catch (e) {
     throw Exception('Error loading dashboard stats: $e');

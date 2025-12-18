@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../providers/hafalan_provider.dart';
+import '../providers/hafalan_provider.dart';
 import '../widgets/materi_form_dialog.dart';
 
 class AdminHafalanMateriPage extends ConsumerWidget {
@@ -23,7 +23,7 @@ class AdminHafalanMateriPage extends ConsumerWidget {
               Text('Error: $error'),
               const SizedBox(height: 16),
               ElevatedButton(
-                onPressed: () => ref.refresh(allMateriProvider),
+                onPressed: () => ref.invalidate(allMateriProvider),
                 child: const Text('Coba Lagi'),
               ),
             ],
@@ -105,7 +105,7 @@ class AdminHafalanMateriPage extends ConsumerWidget {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => _showAddDialog(context),
+        onPressed: () => _showAddDialog(context, 'doa'),
         icon: const Icon(Icons.add),
         label: const Text('Tambah Materi'),
       ),
@@ -175,6 +175,12 @@ class AdminHafalanMateriPage extends ConsumerWidget {
                     ),
                   ),
                 ),
+                if (canAdd && tipe != null)
+                  IconButton(
+                    onPressed: () => _showAddDialog(context, tipe),
+                    icon: const Icon(Icons.add_circle_outline),
+                    color: color,
+                  ),
               ],
             ),
           ),
@@ -206,14 +212,24 @@ class AdminHafalanMateriPage extends ConsumerWidget {
                     ),
                   ),
                   title: Text(
-                    materi.judul,
+                    materi.nama,
                     style: const TextStyle(fontWeight: FontWeight.w500),
                   ),
-                  subtitle: materi.tipe == 'alquran'
-                      ? Text(
-                          '${materi.suratName} ayat ${materi.ayatStart}-${materi.ayatEnd}',
+                  subtitle: materi.link != null
+                      ? Row(
+                          children: [
+                            const Icon(Icons.link, size: 14),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                materi.link!,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
                         )
-                      : Text(materi.arabText ?? materi.konten ?? ''),
+                      : null,
                   trailing: canAdd
                       ? PopupMenuButton(
                           icon: const Icon(Icons.more_vert),
@@ -254,7 +270,7 @@ class AdminHafalanMateriPage extends ConsumerWidget {
                                 context,
                                 ref,
                                 materi.id,
-                                materi.judul,
+                                materi.nama,
                               );
                             }
                           },
@@ -268,16 +284,18 @@ class AdminHafalanMateriPage extends ConsumerWidget {
     );
   }
 
-  void _showAddDialog(BuildContext context) {
-    showDialog(
+  void _showAddDialog(BuildContext context, String tipe) {
+    showModalBottomSheet(
       context: context,
-      builder: (context) => const MateriFormDialog(),
+      isScrollControlled: true,
+      builder: (context) => MateriFormDialog(initialTipe: tipe),
     );
   }
 
   void _showEditDialog(BuildContext context, materi) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (context) => MateriFormDialog(materi: materi),
     );
   }
@@ -286,13 +304,13 @@ class AdminHafalanMateriPage extends ConsumerWidget {
     BuildContext context,
     WidgetRef ref,
     String id,
-    String judul,
+    String nama,
   ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Konfirmasi Hapus'),
-        content: Text('Yakin ingin menghapus "$judul"?'),
+        content: Text('Yakin ingin menghapus "$nama"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -302,7 +320,7 @@ class AdminHafalanMateriPage extends ConsumerWidget {
             onPressed: () async {
               Navigator.pop(context);
               await ref.read(materiNotifierProvider.notifier).deleteMateri(id);
-              ref.refresh(allMateriProvider);
+              ref.invalidate(allMateriProvider);
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text('Materi berhasil dihapus')),

@@ -6,11 +6,9 @@ import 'package:sisantri/core/theme/app_theme.dart';
 import 'package:sisantri/features/santri/leaderboard/presentation/aggregate_leaderboard_page.dart';
 import 'package:sisantri/shared/models/user_model.dart';
 import 'package:sisantri/shared/models/jadwal_model.dart';
-import 'package:sisantri/features/santri/presensi/presentation/pages/presensi_summary_page.dart';
 import 'package:sisantri/features/shared/announcement/presentation/announcement_page.dart';
 import 'package:sisantri/features/shared/jadwal/presentation/jadwal_page.dart';
 import 'package:sisantri/features/dewan_guru/navigation/dewan_guru_navigation.dart';
-import 'package:sisantri/shared/models/presensi_model.dart';
 import 'package:sisantri/features/shared/announcement/data/models/announcement_model.dart';
 import 'package:sisantri/shared/services/announcement_service.dart';
 import 'package:sisantri/features/hafalan/presentation/pages/guru_konfirmasi_hafalan_page.dart';
@@ -126,94 +124,12 @@ class DewanGuruDashboardPage extends ConsumerWidget {
     );
   }
 
-  Widget _buildWelcomeCard() {
-    return Card(
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            colors: [
-              AppTheme.primaryColor,
-              AppTheme.primaryColor.withOpacity(0.8),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.school,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-                const Spacer(),
-                Icon(
-                  Icons.notifications_active,
-                  color: Colors.white.withOpacity(0.8),
-                  size: 20,
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Selamat datang, ${user.nama}',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'Dewan Guru',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.9),
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Pantau perkembangan santri dan kegiatan pondok pesantren',
-              style: TextStyle(
-                color: Colors.white.withOpacity(0.9),
-                fontSize: 14,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildQuickStats(Map<String, dynamic> stats) {
     final totalSantri = stats['totalSantri'] ?? 0;
     final activeSantri = stats['activeSantri'] ?? 0;
-    final todayPresensi = stats['todayPresensi'] as List<PresensiModel>? ?? [];
-
-    // Hitung jumlah yang hadir hari ini
-    final presentCount = todayPresensi
-        .where((p) => p.status == StatusPresensi.hadir)
-        .length;
-
-    // Hitung persentase kehadiran
-    final attendancePercentage = activeSantri > 0
-        ? (presentCount / activeSantri * 100).toStringAsFixed(0)
-        : '0';
+    final presentCount = stats['presentCount'] ?? 0;
+    final attendancePercentage =
+        (stats['attendancePercentage'] as double? ?? 0.0).toStringAsFixed(0);
 
     return Row(
       children: [
@@ -300,17 +216,9 @@ class DewanGuruDashboardPage extends ConsumerWidget {
         'color': Colors.purple,
         'onTap': () => Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => const GuruKonfirmasiHafalanPage()),
-        ),
-      },
-      {
-        'title': 'Rangkuman Presensi',
-        'subtitle': 'Lihat data kehadiran santri',
-        'icon': Icons.analytics,
-        'color': Colors.blue,
-        'onTap': () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const PresensiSummaryPage()),
+          MaterialPageRoute(
+            builder: (context) => const GuruKonfirmasiHafalanPage(),
+          ),
         ),
       },
       {
@@ -323,26 +231,6 @@ class DewanGuruDashboardPage extends ConsumerWidget {
           MaterialPageRoute(
             builder: (context) => const AggregateLeaderboardPage(),
           ),
-        ),
-      },
-      {
-        'title': 'Pengumuman',
-        'subtitle': 'Lihat pengumuman terbaru',
-        'icon': Icons.campaign,
-        'color': Colors.orange,
-        'onTap': () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const AnnouncementPage()),
-        ),
-      },
-      {
-        'title': 'Jadwal Kegiatan',
-        'subtitle': 'Jadwal harian & mingguan',
-        'icon': Icons.schedule,
-        'color': Colors.green,
-        'onTap': () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => const JadwalPage()),
         ),
       },
     ];
@@ -366,7 +254,7 @@ class DewanGuruDashboardPage extends ConsumerWidget {
             crossAxisCount: 2,
             crossAxisSpacing: 12,
             mainAxisSpacing: 12,
-            childAspectRatio: 1.2,
+            childAspectRatio: 1.1, // Adjusted to prevent overflow
           ),
           itemCount: menuItems.length,
           itemBuilder: (context, index) {
@@ -413,6 +301,8 @@ class DewanGuruDashboardPage extends ConsumerWidget {
               const SizedBox(height: 12),
               Text(
                 title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.bold,
@@ -422,6 +312,8 @@ class DewanGuruDashboardPage extends ConsumerWidget {
               const SizedBox(height: 4),
               Text(
                 subtitle,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontSize: 12, color: Colors.grey[600]),
               ),
             ],

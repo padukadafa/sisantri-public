@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../shared/auth/presentation/providers/auth_provider.dart';
+import '../../../dewan_guru/navigation/dewan_guru_navigation.dart';
 import '../../domain/entities/hafalan_materi.dart';
 import '../providers/hafalan_provider.dart';
 
 class MateriFormDialog extends ConsumerStatefulWidget {
   final HafalanMateri? materi;
+  final String? initialTipe;
 
-  const MateriFormDialog({super.key, this.materi});
+  const MateriFormDialog({super.key, this.materi, this.initialTipe});
 
   @override
   ConsumerState<MateriFormDialog> createState() => _MateriFormDialogState();
@@ -15,153 +16,122 @@ class MateriFormDialog extends ConsumerStatefulWidget {
 
 class _MateriFormDialogState extends ConsumerState<MateriFormDialog> {
   final _formKey = GlobalKey<FormState>();
-  late TextEditingController _judulController;
-  late TextEditingController _arabTextController;
-  late TextEditingController _latinTextController;
-  late TextEditingController _translationController;
+  late TextEditingController _namaController;
+  late TextEditingController _linkController;
   late String _selectedTipe;
   bool _isLoading = false;
 
   @override
   void initState() {
     super.initState();
-    _judulController = TextEditingController(text: widget.materi?.judul ?? '');
-    _arabTextController = TextEditingController(
-      text: widget.materi?.arabText ?? '',
-    );
-    _latinTextController = TextEditingController(
-      text: widget.materi?.latinText ?? '',
-    );
-    _translationController = TextEditingController(
-      text: widget.materi?.translation ?? '',
-    );
-    _selectedTipe = widget.materi?.tipe ?? 'doa';
+    _namaController = TextEditingController(text: widget.materi?.nama ?? '');
+    _linkController = TextEditingController(text: widget.materi?.link ?? '');
+    _selectedTipe = widget.materi?.tipe ?? widget.initialTipe ?? 'Surat Pendek';
   }
 
   @override
   void dispose() {
-    _judulController.dispose();
-    _arabTextController.dispose();
-    _latinTextController.dispose();
-    _translationController.dispose();
+    _namaController.dispose();
+    _linkController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(widget.materi == null ? 'Tambah Materi' : 'Edit Materi'),
-      content: SingleChildScrollView(
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+        left: 16,
+        right: 16,
+        top: 16,
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            widget.materi == null ? 'Tambah Materi' : 'Edit Materi',
+            style: Theme.of(context).textTheme.titleLarge,
+          ),
+          const SizedBox(height: 16),
+          Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                DropdownButtonFormField<String>(
+                  value: _selectedTipe,
+                  decoration: const InputDecoration(
+                    labelText: 'Tipe Hafalan',
+                    border: OutlineInputBorder(),
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'doa', child: Text('Doa Harian')),
+                    DropdownMenuItem(
+                      value: 'tambahan',
+                      child: Text('Materi Tambahan'),
+                    ),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      setState(() {
+                        _selectedTipe = value;
+                      });
+                    }
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _namaController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nama Materi',
+                    hintText: 'Contoh: An-Nas, Doa Makan',
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Nama materi tidak boleh kosong';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _linkController,
+                  decoration: const InputDecoration(
+                    labelText: 'Link (opsional)',
+                    hintText: 'https://example.com/resource',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 2,
+                  keyboardType: TextInputType.url,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 24),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              // Tipe dropdown
-              DropdownButtonFormField<String>(
-                value: _selectedTipe,
-                decoration: const InputDecoration(
-                  labelText: 'Tipe Materi',
-                  border: OutlineInputBorder(),
-                ),
-                items: const [
-                  DropdownMenuItem(value: 'doa', child: Text('Doa')),
-                  DropdownMenuItem(value: 'tambahan', child: Text('Tambahan')),
-                ],
-                onChanged: (value) {
-                  setState(() {
-                    _selectedTipe = value!;
-                  });
-                },
+              TextButton(
+                onPressed: _isLoading ? null : () => Navigator.pop(context),
+                child: const Text('Batal'),
               ),
-              const SizedBox(height: 16),
-
-              // Judul
-              TextFormField(
-                controller: _judulController,
-                decoration: const InputDecoration(
-                  labelText: 'Judul',
-                  hintText: 'Contoh: Doa Sebelum Makan',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Judul tidak boleh kosong';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Arab Text
-              TextFormField(
-                controller: _arabTextController,
-                decoration: const InputDecoration(
-                  labelText: 'Teks Arab',
-                  hintText: 'بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 3,
-                textDirection: TextDirection.rtl,
-                style: const TextStyle(fontSize: 18),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Teks Arab tidak boleh kosong';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-
-              // Latin Text
-              TextFormField(
-                controller: _latinTextController,
-                decoration: const InputDecoration(
-                  labelText: 'Teks Latin (opsional)',
-                  hintText: 'Bismillahirrahmanirrahim',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 2,
-              ),
-              const SizedBox(height: 16),
-
-              // Translation
-              TextFormField(
-                controller: _translationController,
-                decoration: const InputDecoration(
-                  labelText: 'Terjemahan',
-                  hintText: 'Dengan menyebut nama Allah...',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 2,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Terjemahan tidak boleh kosong';
-                  }
-                  return null;
-                },
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: _isLoading ? null : _saveMateri,
+                child: _isLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : Text(widget.materi == null ? 'Tambah' : 'Simpan'),
               ),
             ],
           ),
-        ),
+          const SizedBox(height: 16),
+        ],
       ),
-      actions: [
-        TextButton(
-          onPressed: _isLoading ? null : () => Navigator.pop(context),
-          child: const Text('Batal'),
-        ),
-        ElevatedButton(
-          onPressed: _isLoading ? null : _saveMateri,
-          child: _isLoading
-              ? const SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                )
-              : Text(widget.materi == null ? 'Tambah' : 'Simpan'),
-        ),
-      ],
     );
   }
 
@@ -178,23 +148,19 @@ class _MateriFormDialogState extends ConsumerState<MateriFormDialog> {
 
       final materi =
           widget.materi?.copyWith(
-            judul: _judulController.text.trim(),
+            nama: _namaController.text.trim(),
             tipe: _selectedTipe,
-            arabText: _arabTextController.text.trim(),
-            latinText: _latinTextController.text.trim().isEmpty
+            link: _linkController.text.trim().isEmpty
                 ? null
-                : _latinTextController.text.trim(),
-            translation: _translationController.text.trim(),
+                : _linkController.text.trim(),
           ) ??
           HafalanMateri(
             id: '',
-            judul: _judulController.text.trim(),
+            nama: _namaController.text.trim(),
             tipe: _selectedTipe,
-            arabText: _arabTextController.text.trim(),
-            latinText: _latinTextController.text.trim().isEmpty
+            link: _linkController.text.trim().isEmpty
                 ? null
-                : _latinTextController.text.trim(),
-            translation: _translationController.text.trim(),
+                : _linkController.text.trim(),
             createdAt: DateTime.now(),
             createdBy: userId,
             isActive: true,
@@ -208,7 +174,7 @@ class _MateriFormDialogState extends ConsumerState<MateriFormDialog> {
       }
 
       // Refresh data
-      ref.refresh(allMateriProvider);
+      ref.invalidate(allMateriProvider);
 
       if (mounted) {
         Navigator.pop(context);

@@ -124,7 +124,11 @@ class DashboardContent extends StatelessWidget {
                   color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(Icons.auto_stories, color: Colors.white, size: 32),
+                child: const Icon(
+                  Icons.auto_stories,
+                  color: Colors.white,
+                  size: 32,
+                ),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -149,7 +153,11 @@ class DashboardContent extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 20),
+              const Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.white,
+                size: 20,
+              ),
             ],
           ),
         ),
