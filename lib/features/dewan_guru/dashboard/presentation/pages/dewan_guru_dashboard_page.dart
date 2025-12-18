@@ -125,34 +125,57 @@ class DewanGuruDashboardPage extends ConsumerWidget {
   }
 
   Widget _buildQuickStats(Map<String, dynamic> stats) {
+    final summary = (stats['summary'] as Map<String, dynamic>?) ?? {};
+    final todayStats = (summary['today'] as Map<String, dynamic>?) ?? {};
+    final weeklyStats = (summary['thisWeek'] as Map<String, dynamic>?) ?? {};
+
     final totalSantri = stats['totalSantri'] ?? 0;
     final activeSantri = stats['activeSantri'] ?? 0;
-    final presentCount = stats['presentCount'] ?? 0;
-    final attendancePercentage =
-        (stats['attendancePercentage'] as double? ?? 0.0).toStringAsFixed(0);
 
-    return Row(
-      children: [
-        Expanded(
-          child: _buildStatCard(
-            title: 'Total Santri',
-            value: totalSantri.toString(),
-            subtitle: 'Santri Aktif',
-            icon: Icons.people,
-            color: Colors.blue,
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _buildStatCard(
-            title: 'Kehadiran Hari Ini',
-            value: '$presentCount / $activeSantri',
-            subtitle: '$attendancePercentage% Hadir',
-            icon: Icons.how_to_reg,
-            color: Colors.green,
-          ),
-        ),
-      ],
+    final todayAttendancePercentage =
+        (todayStats['persentaseKehadiran'] as double? ?? 0.0).toStringAsFixed(
+          1,
+        );
+    final weeklyAttendancePercentage =
+        (weeklyStats['persentaseKehadiran'] as double? ?? 0.0).toStringAsFixed(
+          1,
+        );
+
+    final todayPresensiTotal = todayStats['totalPresensi'] ?? 0;
+    final weeklyPresensiTotal = weeklyStats['totalPresensi'] ?? 0;
+
+    final cards = [
+      _buildStatCard(
+        title: 'Santri Aktif',
+        value: activeSantri.toString(),
+        subtitle: '$totalSantri terdaftar',
+        icon: Icons.people,
+        color: Colors.blue,
+      ),
+      _buildStatCard(
+        title: 'Tingkat Kehadiran (Hari Ini)',
+        value: '$todayAttendancePercentage%',
+        subtitle: '$todayPresensiTotal total presensi',
+        icon: Icons.today,
+        color: Colors.orange,
+      ),
+      _buildStatCard(
+        title: 'Kehadiran Minggu Ini',
+        value: '$weeklyAttendancePercentage%',
+        subtitle: '$weeklyPresensiTotal total presensi',
+        icon: Icons.trending_up,
+        color: Colors.purple,
+      ),
+    ];
+
+    return GridView.count(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisCount: 2,
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 0.95,
+      children: cards,
     );
   }
 

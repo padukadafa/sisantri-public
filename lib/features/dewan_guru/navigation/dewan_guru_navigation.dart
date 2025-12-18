@@ -68,20 +68,10 @@ final dewaGuruDashboardStatsProvider = FutureProvider<Map<String, dynamic>>((
         .where((s) => s.statusAktif && s.rfidCardId != null)
         .length;
 
-    // Calculate present count from aggregates
-    final presentCount =
-        (dailyStats['totalHadir'] as int? ?? 0) +
-        (dailyStats['totalTerlambat'] as int? ?? 0);
-
-    final attendancePercentage =
-        dailyStats['persentaseKehadiran'] as double? ?? 0.0;
-
     return {
       'summary': {'today': dailyStats, 'thisWeek': weeklyStats},
       'todayPresensi': <PresensiModel>[], // Empty list as we use aggregates
       'totalSantri': activeSantri,
-      'presentCount': presentCount,
-      'attendancePercentage': attendancePercentage,
     };
   } catch (e) {
     throw Exception('Error loading dashboard stats: $e');
