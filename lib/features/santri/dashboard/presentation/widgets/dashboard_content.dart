@@ -6,6 +6,7 @@ import 'package:sisantri/shared/models/user_model.dart';
 import 'package:sisantri/shared/widgets/presensi_aggregate_stats_widget.dart';
 import 'package:sisantri/shared/widgets/level_progress_card.dart';
 import 'package:sisantri/shared/services/presensi_aggregate_service.dart';
+import 'package:sisantri/features/hafalan/presentation/pages/santri_hafalan_page.dart';
 
 import '../providers/dashboard_providers.dart';
 import '../providers/stats_providers.dart';
@@ -61,6 +62,9 @@ class DashboardContent extends StatelessWidget {
               ),
             const PrayerTimesCard(),
             const SizedBox(height: 20),
+            // Quick Actions - Hafalan
+            _buildQuickActionsCard(context),
+            const SizedBox(height: 20),
             const DashboardAdditionalStats(),
             const SizedBox(height: 24),
             // Aggregate Stats Section
@@ -87,6 +91,69 @@ class DashboardContent extends StatelessWidget {
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
       ],
+    );
+  }
+
+  Widget _buildQuickActionsCard(BuildContext context) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: InkWell(
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => const SantriHafalanPage()),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            gradient: LinearGradient(
+              colors: [Colors.purple.shade700, Colors.purple.shade500],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.auto_stories, color: Colors.white, size: 32),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Hafalan Saya',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      'Lihat progress hafalan Al-Quran & doa',
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.9),
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.arrow_forward_ios, color: Colors.white, size: 20),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

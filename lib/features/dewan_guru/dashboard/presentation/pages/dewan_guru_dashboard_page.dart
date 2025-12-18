@@ -13,6 +13,7 @@ import 'package:sisantri/features/dewan_guru/navigation/dewan_guru_navigation.da
 import 'package:sisantri/shared/models/presensi_model.dart';
 import 'package:sisantri/features/shared/announcement/data/models/announcement_model.dart';
 import 'package:sisantri/shared/services/announcement_service.dart';
+import 'package:sisantri/features/hafalan/presentation/pages/guru_konfirmasi_hafalan_page.dart';
 
 /// Provider untuk pengumuman terbaru (3 pengumuman)
 final recentAnnouncementsProvider = StreamProvider<List<AnnouncementModel>>((
@@ -112,7 +113,7 @@ class DewanGuruDashboardPage extends ConsumerWidget {
               children: [
                 _buildQuickStats(stats),
                 const SizedBox(height: 24),
-                // _buildMenuGrid(context),
+                _buildMenuGrid(context),
                 const SizedBox(height: 24),
                 _buildJadwalTerdekat(ref),
                 const SizedBox(height: 24),
@@ -292,6 +293,16 @@ class DewanGuruDashboardPage extends ConsumerWidget {
 
   Widget _buildMenuGrid(BuildContext context) {
     final menuItems = [
+      {
+        'title': 'Konfirmasi Hafalan',
+        'subtitle': 'Periksa hafalan santri',
+        'icon': Icons.auto_stories,
+        'color': Colors.purple,
+        'onTap': () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => const GuruKonfirmasiHafalanPage()),
+        ),
+      },
       {
         'title': 'Rangkuman Presensi',
         'subtitle': 'Lihat data kehadiran santri',
