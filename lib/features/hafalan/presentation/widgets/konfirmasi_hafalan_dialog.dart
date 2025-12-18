@@ -241,6 +241,7 @@ class _KonfirmasiHafalanDialogState
             materiId: widget.progress.materiId,
             guruId: widget.guruId,
             guruName: widget.guruName,
+            santriName: widget.progress.santriName,
             nilai: _nilai,
             status: _status,
             catatan: _catatanController.text.trim().isEmpty

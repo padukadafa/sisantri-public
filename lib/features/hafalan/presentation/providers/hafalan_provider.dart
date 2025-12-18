@@ -150,13 +150,18 @@ class ProgressNotifier extends StateNotifier<AsyncValue<void>> {
   }
 
   // Mulai hafalan (santri)
-  Future<void> mulaiHafalan(String santriId, String materiId) async {
+  Future<void> mulaiHafalan(
+    String santriId,
+    String santriName,
+    String materiId,
+  ) async {
     state = const AsyncValue.loading();
     try {
       final progress = HafalanProgress(
         id: '',
         santriId: santriId,
         materiId: materiId,
+        santriName: santriName,
         status: 'proses',
         tanggalMulai: DateTime.now(),
         createdAt: DateTime.now(),
@@ -176,6 +181,7 @@ class ProgressNotifier extends StateNotifier<AsyncValue<void>> {
     required String materiId,
     required String guruId,
     required String guruName,
+    required String santriName,
     required int nilai,
     required String status,
     String? catatan,
@@ -193,6 +199,7 @@ class ProgressNotifier extends StateNotifier<AsyncValue<void>> {
         progress = HafalanProgress(
           id: '',
           santriId: santriId,
+          santriName: santriName,
           materiId: materiId,
           status: status,
           tanggalMulai: DateTime.now(),

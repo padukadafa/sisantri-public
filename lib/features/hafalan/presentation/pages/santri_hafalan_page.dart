@@ -5,11 +5,25 @@ import '../../domain/entities/hafalan_progress.dart';
 import '../providers/hafalan_provider.dart';
 import '../widgets/hafalan_detail_dialog.dart';
 
-class SantriHafalanPage extends ConsumerWidget {
+class SantriHafalanPage extends ConsumerStatefulWidget {
   const SantriHafalanPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SantriHafalanPage> createState() => _SantriHafalanPageState();
+}
+
+class _SantriHafalanPageState extends ConsumerState<SantriHafalanPage> {
+  final TextEditingController _searchController = TextEditingController();
+  String _selectedFilter = 'semua';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final user = ref.watch(authStateProvider).value;
     if (user == null) {
       return const Scaffold(body: Center(child: Text('User not found')));
@@ -146,130 +160,301 @@ class SantriHafalanPage extends ConsumerWidget {
                   );
                 }
 
+                // Filter & search
+                final filtered = items.where((item) {
+                  final materi = item['materi'];
+                  final progress = item['progress'] as HafalanProgress;
+
+                  if (_selectedFilter != 'semua' &&
+                      progress.status != _selectedFilter) {
+                    return false;
+                  }
+
+                  final q = _searchController.text.trim().toLowerCase();
+                  if (q.isEmpty) return true;
+                  final name = (materi.nama as String).toLowerCase();
+                  return name.contains(q);
+                }).toList();
+
+                // Group by tipe for readability
+                final grouped = <String, List<Map<String, dynamic>>>{};
+                for (final item in filtered) {
+                  final tipe = item['materi'].tipe as String;
+                  grouped.putIfAbsent(tipe, () => []).add(item);
+                }
+
                 return RefreshIndicator(
                   onRefresh: () async {
                     ref.invalidate(progressWithMateriProvider(user.uid));
                     ref.invalidate(statisticsBySantriProvider(user.uid));
                   },
-                  child: ListView.builder(
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
                     padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: items.length,
-                    itemBuilder: (context, index) {
-                      final item = items[index];
-                      final materi = item['materi'];
-                      final progress = item['progress'] as HafalanProgress;
-
-                      return Card(
-                        margin: const EdgeInsets.only(bottom: 12),
-                        elevation: 2,
-                        child: InkWell(
-                          onTap: () => _showDetailDialog(
-                            context,
-                            ref,
-                            materi,
-                            progress,
-                            user.uid,
+                    children: [
+                      // Search & filter bar
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextField(
+                            controller: _searchController,
+                            decoration: InputDecoration(
+                              prefixIcon: const Icon(Icons.search),
+                              hintText: 'Cari materi...',
+                              filled: true,
+                              fillColor: Colors.grey[100],
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                            onChanged: (_) => setState(() {}),
                           ),
-                          child: Padding(
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    CircleAvatar(
-                                      backgroundColor: _getMateriColor(
-                                        materi.tipe,
-                                      ).withOpacity(0.2),
-                                      child: Icon(
-                                        _getMateriIcon(materi.tipe),
-                                        color: _getMateriColor(materi.tipe),
-                                        size: 24,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 12),
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Text(
-                                            materi.nama,
-                                            style: const TextStyle(
-                                              fontWeight: FontWeight.bold,
-                                              fontSize: 16,
-                                            ),
-                                          ),
-                                          Text(
-                                            _getMateriTipeLabel(materi.tipe),
-                                            style: TextStyle(
-                                              fontSize: 12,
-                                              color: Colors.grey[600],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    _buildStatusBadge(progress.status),
-                                  ],
+                          const SizedBox(height: 10),
+                          SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: SegmentedButton<String>(
+                              segments: const [
+                                ButtonSegment(
+                                  value: 'semua',
+                                  label: Text('Semua'),
                                 ),
-
-                                if (progress.status == 'selesai' &&
-                                    progress.nilai != null) ...[
-                                  const SizedBox(height: 12),
-                                  const Divider(height: 1),
-                                  const SizedBox(height: 12),
-                                  Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          const Icon(
-                                            Icons.school,
-                                            size: 16,
-                                            color: Colors.blue,
-                                          ),
-                                          const SizedBox(width: 4),
-                                          Text(
-                                            progress.guruPengujiName ?? 'Guru',
-                                            style: const TextStyle(
-                                              fontSize: 12,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 12,
-                                          vertical: 4,
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: _getNilaiColor(
-                                            progress.nilai!,
-                                          ),
-                                          borderRadius: BorderRadius.circular(
-                                            12,
-                                          ),
-                                        ),
-                                        child: Text(
-                                          'Nilai: ${progress.nilai}',
-                                          style: const TextStyle(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ],
+                                ButtonSegment(
+                                  value: 'proses',
+                                  label: Text('Proses'),
+                                ),
+                                ButtonSegment(
+                                  value: 'selesai',
+                                  label: Text('Selesai'),
+                                ),
+                                ButtonSegment(
+                                  value: 'belum',
+                                  label: Text('Belum'),
+                                ),
                               ],
+                              selected: {_selectedFilter},
+                              onSelectionChanged: (v) {
+                                setState(() {
+                                  _selectedFilter = v.first;
+                                });
+                              },
+                              showSelectedIcon: false,
+                              style: ButtonStyle(
+                                visualDensity: VisualDensity.compact,
+                                padding: MaterialStateProperty.all(
+                                  const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                      );
-                    },
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+
+                      if (filtered.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 48),
+                          child: Column(
+                            children: const [
+                              Icon(
+                                Icons.search_off,
+                                size: 48,
+                                color: Colors.grey,
+                              ),
+                              SizedBox(height: 12),
+                              Text('Tidak ada materi yang cocok'),
+                            ],
+                          ),
+                        )
+                      else
+                        ...grouped.entries.map((entry) {
+                          final tipe = entry.key;
+                          final list = entry.value;
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 8,
+                                ),
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      _getMateriIcon(tipe),
+                                      color: _getMateriColor(tipe),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      _getMateriTipeLabel(tipe),
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const Spacer(),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: _getMateriColor(
+                                          tipe,
+                                        ).withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text('${list.length} materi'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: list.length,
+                                separatorBuilder: (_, __) =>
+                                    const Divider(height: 1),
+                                itemBuilder: (context, index) {
+                                  final item = list[index];
+                                  final materi = item['materi'];
+                                  final progress =
+                                      item['progress'] as HafalanProgress;
+
+                                  return Card(
+                                    margin: const EdgeInsets.only(bottom: 12),
+                                    elevation: 1,
+                                    child: InkWell(
+                                      onTap: () => _showDetailDialog(
+                                        context,
+                                        ref,
+                                        materi,
+                                        progress,
+                                        user.uid,
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(14),
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
+                                          children: [
+                                            Row(
+                                              children: [
+                                                CircleAvatar(
+                                                  backgroundColor:
+                                                      _getMateriColor(
+                                                        materi.tipe,
+                                                      ).withOpacity(0.15),
+                                                  child: Icon(
+                                                    _getMateriIcon(materi.tipe),
+                                                    color: _getMateriColor(
+                                                      materi.tipe,
+                                                    ),
+                                                    size: 22,
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 12),
+                                                Expanded(
+                                                  child: Column(
+                                                    crossAxisAlignment:
+                                                        CrossAxisAlignment
+                                                            .start,
+                                                    children: [
+                                                      Text(
+                                                        materi.nama,
+                                                        style: const TextStyle(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                          fontSize: 15,
+                                                        ),
+                                                      ),
+                                                      Text(
+                                                        _getMateriTipeLabel(
+                                                          materi.tipe,
+                                                        ),
+                                                        style: TextStyle(
+                                                          fontSize: 12,
+                                                          color:
+                                                              Colors.grey[600],
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                ),
+                                                _buildStatusBadge(
+                                                  progress.status,
+                                                ),
+                                              ],
+                                            ),
+
+                                            if (progress.status == 'selesai' &&
+                                                progress.nilai != null) ...[
+                                              const SizedBox(height: 10),
+                                              const Divider(height: 1),
+                                              const SizedBox(height: 10),
+                                              Row(
+                                                mainAxisAlignment:
+                                                    MainAxisAlignment
+                                                        .spaceBetween,
+                                                children: [
+                                                  Row(
+                                                    children: [
+                                                      const Icon(
+                                                        Icons.school,
+                                                        size: 16,
+                                                        color: Colors.blue,
+                                                      ),
+                                                      const SizedBox(width: 4),
+                                                      Text(
+                                                        progress.guruPengujiName ??
+                                                            'Guru',
+                                                        style: const TextStyle(
+                                                          fontSize: 12,
+                                                        ),
+                                                      ),
+                                                    ],
+                                                  ),
+                                                  Container(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 12,
+                                                          vertical: 4,
+                                                        ),
+                                                    decoration: BoxDecoration(
+                                                      color: _getNilaiColor(
+                                                        progress.nilai!,
+                                                      ),
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            12,
+                                                          ),
+                                                    ),
+                                                    child: Text(
+                                                      'Nilai: ${progress.nilai}',
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                        fontSize: 12,
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ],
+                          );
+                        }),
+                    ],
                   ),
                 );
               },
@@ -406,6 +591,10 @@ class SantriHafalanPage extends ConsumerWidget {
         materi: materi,
         progress: progress,
         santriId: santriId,
+        santriName:
+            (ref.read(authStateProvider).value?.displayName ?? '').isNotEmpty
+            ? ref.read(authStateProvider).value!.displayName!
+            : 'Santri',
       ),
     );
   }

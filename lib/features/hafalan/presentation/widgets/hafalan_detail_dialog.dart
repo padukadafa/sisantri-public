@@ -7,12 +7,14 @@ class HafalanDetailDialog extends ConsumerWidget {
   final dynamic materi;
   final HafalanProgress progress;
   final String santriId;
+  final String santriName;
 
   const HafalanDetailDialog({
     super.key,
     required this.materi,
     required this.progress,
     required this.santriId,
+    required this.santriName,
   });
 
   @override
@@ -306,7 +308,7 @@ class HafalanDetailDialog extends ConsumerWidget {
     try {
       await ref
           .read(progressNotifierProvider.notifier)
-          .mulaiHafalan(santriId, materi.id);
+          .mulaiHafalan(santriId, santriName, materi.id);
 
       ref.invalidate(progressWithMateriProvider(santriId));
       ref.invalidate(statisticsBySantriProvider(santriId));

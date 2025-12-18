@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class HafalanProgress {
   final String id;
   final String santriId;
+  final String santriName;
   final String materiId;
   final String status; // 'belum', 'proses', 'selesai'
   final DateTime? tanggalMulai;
@@ -12,12 +13,14 @@ class HafalanProgress {
   final String? guruPengujiName;
   final String? catatan; // Catatan dari guru
   final int? nilai; // Nilai 1-100
+  final int poin; // Poin hafalan untuk materi ini
   final DateTime createdAt;
   final DateTime updatedAt;
 
   const HafalanProgress({
     required this.id,
     required this.santriId,
+    required this.santriName,
     required this.materiId,
     this.status = 'belum',
     this.tanggalMulai,
@@ -26,6 +29,7 @@ class HafalanProgress {
     this.guruPengujiName,
     this.catatan,
     this.nilai,
+    this.poin = 1,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -43,14 +47,22 @@ class HafalanProgress {
       guruPengujiName: data['guruPengujiName'],
       catatan: data['catatan'],
       nilai: data['nilai'],
+      poin: (() {
+        final raw = data['poin'];
+        if (raw is int) return raw;
+        if (raw is double) return raw.round();
+        return 1;
+      })(),
       createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      santriName: data['santriName'] ?? '',
     );
   }
 
   Map<String, dynamic> toFirestore() {
     return {
       'santriId': santriId,
+      'santriName': santriName,
       'materiId': materiId,
       'status': status,
       'tanggalMulai': tanggalMulai != null
@@ -63,6 +75,7 @@ class HafalanProgress {
       'guruPengujiName': guruPengujiName,
       'catatan': catatan,
       'nilai': nilai,
+      'poin': poin,
       'createdAt': Timestamp.fromDate(createdAt),
       'updatedAt': Timestamp.fromDate(updatedAt),
     };
@@ -79,8 +92,10 @@ class HafalanProgress {
     String? guruPengujiName,
     String? catatan,
     int? nilai,
+    int? poin,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? santriName,
   }) {
     return HafalanProgress(
       id: id ?? this.id,
@@ -93,8 +108,10 @@ class HafalanProgress {
       guruPengujiName: guruPengujiName ?? this.guruPengujiName,
       catatan: catatan ?? this.catatan,
       nilai: nilai ?? this.nilai,
+      poin: poin ?? this.poin,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      santriName: santriName ?? this.santriName,
     );
   }
 }

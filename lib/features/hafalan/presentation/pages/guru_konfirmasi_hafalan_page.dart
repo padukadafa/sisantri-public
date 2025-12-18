@@ -32,194 +32,204 @@ class GuruKonfirmasiHafalanPage extends ConsumerWidget {
           ),
         ),
         data: (pendingList) {
-          if (pendingList.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.check_circle_outline,
-                    size: 64,
-                    color: Colors.green[300],
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Tidak ada hafalan pending',
-                    style: TextStyle(fontSize: 18, color: Colors.grey),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Semua hafalan sudah dikonfirmasi',
-                    style: TextStyle(color: Colors.grey),
-                  ),
-                ],
-              ),
-            );
-          }
-
           return RefreshIndicator(
             onRefresh: () async {
               ref.invalidate(pendingConfirmationsProvider);
             },
-            child: ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: pendingList.length,
-              itemBuilder: (context, index) {
-                final item = pendingList[index];
-                final progress = item['progress'] as HafalanProgress;
-                final materi = item['materi'];
-                final santriName = item['santriName'] as String;
-
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 12),
-                  elevation: 2,
-                  child: InkWell(
-                    onTap: () => _showKonfirmasiDialog(
-                      context,
-                      ref,
-                      progress,
-                      materi,
-                      santriName,
-                    ),
-                    child: Padding(
-                      padding: const EdgeInsets.all(16),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+            child: pendingList.isEmpty
+                ? ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.all(32),
+                    children: [
+                      Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          // Header dengan santri name dan status
-                          Row(
-                            children: [
-                              CircleAvatar(
-                                backgroundColor: Colors.blue[100],
-                                child: Text(
-                                  santriName[0].toUpperCase(),
-                                  style: TextStyle(
-                                    color: Colors.blue[900],
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      santriName,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 16,
-                                      ),
-                                    ),
-                                    Text(
-                                      _formatDate(
-                                        progress.tanggalMulai ??
-                                            progress.updatedAt,
-                                      ),
-                                      style: TextStyle(
-                                        fontSize: 12,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 12,
-                                  vertical: 6,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.orange[100],
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Text(
-                                  'Menunggu',
-                                  style: TextStyle(
-                                    color: Colors.orange,
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 12,
-                                  ),
-                                ),
-                              ),
-                            ],
+                          Icon(
+                            Icons.check_circle_outline,
+                            size: 64,
+                            color: Colors.green[300],
                           ),
-                          const SizedBox(height: 12),
-                          const Divider(),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Tidak ada hafalan pending',
+                            style: TextStyle(fontSize: 18, color: Colors.grey),
+                          ),
                           const SizedBox(height: 8),
+                          const Text(
+                            'Tarik ke bawah untuk refresh',
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ],
+                  )
+                : ListView.builder(
+                    padding: const EdgeInsets.all(16),
+                    itemCount: pendingList.length,
+                    itemBuilder: (context, index) {
+                      final item = pendingList[index];
+                      final progress = item['progress'] as HafalanProgress;
+                      final materi = item['materi'];
+                      final santriName = item['santriName'] as String;
 
-                          // Materi info
-                          Row(
-                            children: [
-                              Icon(
-                                _getMateriIcon(materi.tipe),
-                                color: _getMateriColor(materi.tipe),
-                                size: 20,
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 12),
+                        elevation: 2,
+                        child: InkWell(
+                          onTap: () => _showKonfirmasiDialog(
+                            context,
+                            ref,
+                            progress,
+                            materi,
+                            santriName,
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                // Header dengan santri name dan status
+                                Row(
                                   children: [
-                                    Text(
-                                      materi.nama,
-                                      style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 15,
+                                    CircleAvatar(
+                                      backgroundColor: Colors.blue[100],
+                                      child: Text(
+                                        santriName[0].toUpperCase(),
+                                        style: TextStyle(
+                                          color: Colors.blue[900],
+                                          fontWeight: FontWeight.bold,
+                                        ),
                                       ),
                                     ),
-                                    if (materi.link != null)
-                                      Row(
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
                                         children: [
-                                          const Icon(Icons.link, size: 12),
-                                          const SizedBox(width: 4),
-                                          Expanded(
-                                            child: Text(
-                                              materi.link!,
-                                              style: TextStyle(
-                                                fontSize: 13,
-                                                color: Colors.grey[600],
-                                              ),
-                                              maxLines: 1,
-                                              overflow: TextOverflow.ellipsis,
+                                          Text(
+                                            santriName,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                          Text(
+                                            _formatDate(
+                                              progress.tanggalMulai ??
+                                                  progress.updatedAt,
+                                            ),
+                                            style: TextStyle(
+                                              fontSize: 12,
+                                              color: Colors.grey[600],
                                             ),
                                           ),
                                         ],
                                       ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 12,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: Colors.orange[100],
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Text(
+                                        'Menunggu',
+                                        style: TextStyle(
+                                          color: Colors.orange,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
                                   ],
                                 ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
+                                const SizedBox(height: 12),
+                                const Divider(),
+                                const SizedBox(height: 8),
 
-                          // Action button
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: () => _showKonfirmasiDialog(
-                                context,
-                                ref,
-                                progress,
-                                materi,
-                                santriName,
-                              ),
-                              icon: const Icon(Icons.check_circle_outline),
-                              label: const Text('Konfirmasi'),
-                              style: ElevatedButton.styleFrom(
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
+                                // Materi info
+                                Row(
+                                  children: [
+                                    Icon(
+                                      _getMateriIcon(materi.tipe),
+                                      color: _getMateriColor(materi.tipe),
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            materi.nama,
+                                            style: const TextStyle(
+                                              fontWeight: FontWeight.w600,
+                                              fontSize: 15,
+                                            ),
+                                          ),
+                                          if (materi.link != null)
+                                            Row(
+                                              children: [
+                                                const Icon(
+                                                  Icons.link,
+                                                  size: 12,
+                                                ),
+                                                const SizedBox(width: 4),
+                                                Expanded(
+                                                  child: Text(
+                                                    materi.link!,
+                                                    style: TextStyle(
+                                                      fontSize: 13,
+                                                      color: Colors.grey[600],
+                                                    ),
+                                                    maxLines: 1,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                              ),
+                                const SizedBox(height: 12),
+
+                                // Action button
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton.icon(
+                                    onPressed: () => _showKonfirmasiDialog(
+                                      context,
+                                      ref,
+                                      progress,
+                                      materi,
+                                      santriName,
+                                    ),
+                                    icon: const Icon(
+                                      Icons.check_circle_outline,
+                                    ),
+                                    label: const Text('Konfirmasi'),
+                                    style: ElevatedButton.styleFrom(
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 12,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
+                        ),
+                      );
+                    },
                   ),
-                );
-              },
-            ),
           );
         },
       ),

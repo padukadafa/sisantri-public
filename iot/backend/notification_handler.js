@@ -34,6 +34,7 @@ async function sendNotificationToDevices(tokens, title, body) {
 }
 const colRefPengumuman = collection(db, "pengumuman");
 const colRefJadwal = collection(db, "jadwal");
+const colRefHafalan = collection(db, "hafalan_progress");
 onSnapshot(colRefPengumuman, (snapshot) => {
   snapshot.docChanges().forEach(async (change) => {
     const docId = change.doc.id;
@@ -154,6 +155,44 @@ onSnapshot(colRefJadwal, (snapshot) => {
         .collection("jadwal")
         .doc(docId)
         .update({ isSended: true });
+    }
+  });
+});
+onSnapshot(colRefHafalan, (snapshot) => {
+  snapshot.docChanges().forEach(async (change) => {
+    const data = change.doc.data();
+    const hafalanData = data;
+    if (change.type === "added") {
+      if (hafalanData.isSended) {
+        return;
+      }
+      const userDoc = await admin
+        .firestore()
+        .collection("users")
+        .where("role", "==", "dewan_guru")
+        .get();
+
+      const userTokens = [];
+      for (const user of userDoc.docs) {
+        const userData = user.data();
+        const tokens = userData.deviceTokens;
+        if (!tokens || tokens.length === 0) {
+          continue;
+        }
+        for (const token of tokens) {
+          userTokens.push(token);
+        }
+      }
+
+      if (userTokens.length > 0) {
+        await sendNotificationToDevices(
+          userTokens,
+          "Hafalan Baru",
+          `Ada permintaan hafalan baru dari santri : ${
+            data.santriName ? data.santriName : ""
+          }...`
+        );
+      }
     }
   });
 });

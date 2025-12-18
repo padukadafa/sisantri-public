@@ -7,6 +7,59 @@ class PresensiAggregateService {
   static final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   static const String _aggregateCollection = 'presensi_aggregates';
 
+  /// Tambah poin saja ke agregat (tanpa mengubah total hadir/izin/etc)
+  /// Cocok untuk reward hafalan atau aktivitas non-presensi.
+  static Future<void> addPoinOnly({
+    required String userId,
+    required int poin,
+    DateTime? tanggal,
+  }) async {
+    final targetDate = tanggal ?? DateTime.now();
+    try {
+      final batch = _firestore.batch();
+      final now = DateTime.now();
+      final periodes = ['daily', 'weekly', 'monthly', 'semester', 'yearly'];
+
+      for (final periode in periodes) {
+        final periodeKey = _getPeriodeKey(periode, targetDate);
+        final docId = '${userId}_${periode}_$periodeKey';
+        final docRef = _firestore.collection(_aggregateCollection).doc(docId);
+
+        final startDate = PeriodeKeyHelper.getStartDate(periode, targetDate);
+        final endDate = PeriodeKeyHelper.getEndDate(periode, targetDate);
+
+        final updateData = {
+          'lastUpdated': Timestamp.fromDate(now),
+          'totalPoin': FieldValue.increment(poin),
+        };
+
+        final docSnapshot = await docRef.get();
+        if (docSnapshot.exists) {
+          batch.update(docRef, updateData);
+        } else {
+          batch.set(docRef, {
+            'userId': userId,
+            'periode': periode,
+            'periodeKey': periodeKey,
+            'startDate': Timestamp.fromDate(startDate),
+            'endDate': Timestamp.fromDate(endDate),
+            'totalHadir': 0,
+            'totalTerlambat': 0,
+            'totalIzin': 0,
+            'totalSakit': 0,
+            'totalAlpha': 0,
+            'totalPoin': poin,
+            'lastUpdated': Timestamp.fromDate(now),
+          });
+        }
+      }
+
+      await batch.commit();
+    } catch (e) {
+      throw Exception('Failed to add poin to aggregates: $e');
+    }
+  }
+
   /// Update agregasi ketika ada presensi baru atau update
   /// Dipanggil setiap kali ada perubahan presensi
   static Future<void> updateAggregates({

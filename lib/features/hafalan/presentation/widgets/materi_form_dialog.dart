@@ -18,6 +18,7 @@ class _MateriFormDialogState extends ConsumerState<MateriFormDialog> {
   final _formKey = GlobalKey<FormState>();
   late TextEditingController _namaController;
   late TextEditingController _linkController;
+  late TextEditingController _poinController;
   late String _selectedTipe;
   bool _isLoading = false;
 
@@ -26,6 +27,9 @@ class _MateriFormDialogState extends ConsumerState<MateriFormDialog> {
     super.initState();
     _namaController = TextEditingController(text: widget.materi?.nama ?? '');
     _linkController = TextEditingController(text: widget.materi?.link ?? '');
+    _poinController = TextEditingController(
+      text: (widget.materi?.poin ?? 1).toString(),
+    );
     _selectedTipe = widget.materi?.tipe ?? widget.initialTipe ?? 'Surat Pendek';
   }
 
@@ -33,6 +37,7 @@ class _MateriFormDialogState extends ConsumerState<MateriFormDialog> {
   void dispose() {
     _namaController.dispose();
     _linkController.dispose();
+    _poinController.dispose();
     super.dispose();
   }
 
@@ -105,6 +110,26 @@ class _MateriFormDialogState extends ConsumerState<MateriFormDialog> {
                   maxLines: 2,
                   keyboardType: TextInputType.url,
                 ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _poinController,
+                  decoration: const InputDecoration(
+                    labelText: 'Poin Hafalan',
+                    hintText: 'Contoh: 10',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Poin tidak boleh kosong';
+                    }
+                    final parsed = int.tryParse(value);
+                    if (parsed == null || parsed < 0) {
+                      return 'Masukkan angka >= 0';
+                    }
+                    return null;
+                  },
+                ),
               ],
             ),
           ),
@@ -145,6 +170,7 @@ class _MateriFormDialogState extends ConsumerState<MateriFormDialog> {
     try {
       final user = ref.read(authStateProvider).value;
       final userId = user?.uid ?? '';
+      final poinValue = int.tryParse(_poinController.text.trim()) ?? 10;
 
       final materi =
           widget.materi?.copyWith(
@@ -153,6 +179,7 @@ class _MateriFormDialogState extends ConsumerState<MateriFormDialog> {
             link: _linkController.text.trim().isEmpty
                 ? null
                 : _linkController.text.trim(),
+            poin: poinValue,
           ) ??
           HafalanMateri(
             id: '',
@@ -161,6 +188,7 @@ class _MateriFormDialogState extends ConsumerState<MateriFormDialog> {
             link: _linkController.text.trim().isEmpty
                 ? null
                 : _linkController.text.trim(),
+            poin: poinValue,
             createdAt: DateTime.now(),
             createdBy: userId,
             isActive: true,

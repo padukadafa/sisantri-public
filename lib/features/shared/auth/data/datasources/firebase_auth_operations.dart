@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import '../models/user_model.dart';
 import 'package:sisantri/core/error/auth_error_mapper.dart';
 
@@ -31,6 +32,11 @@ class FirebaseAuthOperations {
           .collection('users')
           .doc(credential.user!.uid)
           .get();
+      await userDoc.reference.update({
+        'deviceTokens': FieldValue.arrayUnion([
+          await FirebaseMessaging.instance.getToken(),
+        ]),
+      });
 
       if (!userDoc.exists) {
         throw Exception(
@@ -46,7 +52,6 @@ class FirebaseAuthOperations {
       final errorMessage = AuthErrorMapper.mapFirebaseAuthError(e.code);
       throw Exception(errorMessage);
     } catch (e) {
-      print('e in firebase ops: $e');
       final errorMessage = AuthErrorMapper.getErrorMessage(e);
       throw Exception(errorMessage);
     }
@@ -94,8 +99,6 @@ class FirebaseAuthOperations {
 
       await _firestore.collection('users').doc(user.id).set(user.toJson());
 
-      await credential.user!.sendEmailVerification();
-
       return user;
     } on firebase_auth.FirebaseAuthException catch (e) {
       final errorMessage = AuthErrorMapper.mapFirebaseAuthError(e.code);
@@ -109,6 +112,18 @@ class FirebaseAuthOperations {
   Future<void> logout() async {
     try {
       await _firebaseAuth.signOut();
+      final uid = _firebaseAuth.currentUser?.uid;
+      if (uid != null) {
+        final userDoc = _firestore.collection('users').doc(uid);
+        await userDoc.update({
+          'deviceTokens': FieldValue.arrayRemove([
+            await FirebaseMessaging.instance.getToken(),
+          ]),
+        });
+      }
+    } on firebase_auth.FirebaseAuthException catch (e) {
+      final errorMessage = AuthErrorMapper.mapFirebaseAuthError(e.code);
+      throw Exception(errorMessage);
     } catch (e) {
       final errorMessage = AuthErrorMapper.getErrorMessage(e);
       throw Exception(errorMessage);

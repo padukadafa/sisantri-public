@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sisantri/features/hafalan/domain/entities/hafalan_materi.dart';
 import '../providers/hafalan_provider.dart';
 import '../widgets/materi_form_dialog.dart';
 
@@ -71,6 +72,7 @@ class AdminHafalanMateriPage extends ConsumerWidget {
                 canAdd: false,
                 icon: Icons.book,
                 color: Colors.green,
+                isQuran: true,
               ),
               const SizedBox(height: 24),
 
@@ -117,11 +119,12 @@ class AdminHafalanMateriPage extends ConsumerWidget {
     WidgetRef ref, {
     required String title,
     required String subtitle,
-    required List items,
+    required List<HafalanMateri> items,
     required bool canAdd,
     required IconData icon,
     required Color color,
     String? tipe,
+    bool isQuran = false,
   }) {
     return Card(
       elevation: 2,
@@ -190,6 +193,29 @@ class AdminHafalanMateriPage extends ConsumerWidget {
               child: Text(
                 'Belum ada materi',
                 style: TextStyle(color: Colors.grey[400]),
+              ),
+            )
+          else if (isQuran)
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Daftar surah Al-Quran (114) disembunyikan untuk menjaga kerapian layar. Tekan tombol di bawah untuk melihat seluruh daftar.',
+                    style: TextStyle(color: Colors.grey[700], fontSize: 13),
+                  ),
+                  const SizedBox(height: 12),
+                  ElevatedButton.icon(
+                    onPressed: () => _showQuranList(context, items, color),
+                    icon: const Icon(Icons.list),
+                    label: const Text('Lihat Daftar Surah'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: color,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
+                ],
               ),
             )
           else
@@ -280,6 +306,81 @@ class AdminHafalanMateriPage extends ConsumerWidget {
               },
             ),
         ],
+      ),
+    );
+  }
+
+  void _showQuranList(
+    BuildContext context,
+    List<HafalanMateri> items,
+    Color color,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.85,
+        minChildSize: 0.5,
+        maxChildSize: 0.95,
+        builder: (context, controller) {
+          return Column(
+            children: [
+              Container(
+                width: 48,
+                height: 4,
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[400],
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    Icon(Icons.book, color: color),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Daftar Surah Al-Quran',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text('${items.length}'),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: ListView.separated(
+                  controller: controller,
+                  itemCount: items.length,
+                  separatorBuilder: (_, __) => const Divider(height: 1),
+                  itemBuilder: (context, index) {
+                    final materi = items[index];
+                    return ListTile(
+                      leading: CircleAvatar(
+                        backgroundColor: color.withOpacity(0.15),
+                        child: Text(
+                          '${index + 1}',
+                          style: TextStyle(color: color),
+                        ),
+                      ),
+                      title: Text(materi.nama),
+                      subtitle: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [Text("Total poin: ${materi.poin}")],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        },
       ),
     );
   }
