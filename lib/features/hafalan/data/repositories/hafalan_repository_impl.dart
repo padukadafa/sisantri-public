@@ -171,14 +171,8 @@ class HafalanRepositoryImpl implements HafalanRepository {
       final progressWithPoin = progress.copyWith(poin: poin);
 
       await _progressCollection.add(progressWithPoin.toFirestore());
-      await FirestoreService.updateUserPoin(progressWithPoin.santriId, poin);
-      await PresensiAggregateService.addPoinOnly(
-        userId: progressWithPoin.santriId,
-        poin: poin,
-        tanggal: progressWithPoin.updatedAt,
-      );
 
-      // Bonus poin ketika langsung selesai
+      // Tambah poin hanya jika progress langsung selesai (misal dikonfirmasi guru)
       if (progressWithPoin.status == 'selesai') {
         await FirestoreService.updateUserPoin(progressWithPoin.santriId, poin);
         await PresensiAggregateService.addPoinOnly(
