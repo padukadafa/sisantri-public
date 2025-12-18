@@ -3,15 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:sisantri/core/theme/app_theme.dart';
 import 'package:sisantri/features/admin/attendance_management/presentation/pages/attendance_report_page.dart';
-import 'package:sisantri/features/santri/presensi/presentation/pages/presensi_page.dart';
 import 'package:sisantri/shared/models/presensi_model.dart';
 import 'package:sisantri/shared/models/user_model.dart';
 import 'package:sisantri/shared/services/auth_service.dart';
 import 'package:sisantri/shared/services/presensi_service.dart';
 import 'package:sisantri/shared/services/presensi_aggregate_service.dart';
 import 'package:sisantri/features/shared/jadwal/presentation/jadwal_page.dart';
-import 'package:sisantri/features/santri/presensi/presentation/pages/presensi_summary_page.dart';
-import 'package:sisantri/features/santri/leaderboard/presentation/leaderboard_page.dart';
 import 'package:sisantri/features/santri/profile/presentation/pages/profile_page.dart';
 import 'package:sisantri/features/dewan_guru/dashboard/presentation/pages/dewan_guru_dashboard_page.dart';
 
@@ -67,8 +64,9 @@ final dewaGuruDashboardStatsProvider = FutureProvider<Map<String, dynamic>>((
     );
 
     final santriList = await AuthService.getSantriList();
-    final totalSantri = santriList.length;
-    final activeSantri = santriList.where((s) => s.statusAktif).length;
+    final activeSantri = santriList
+        .where((s) => s.statusAktif && s.rfidCardId != null)
+        .length;
 
     // Calculate present count from aggregates
     final presentCount =
@@ -81,8 +79,7 @@ final dewaGuruDashboardStatsProvider = FutureProvider<Map<String, dynamic>>((
     return {
       'summary': {'today': dailyStats, 'thisWeek': weeklyStats},
       'todayPresensi': <PresensiModel>[], // Empty list as we use aggregates
-      'totalSantri': totalSantri,
-      'activeSantri': activeSantri,
+      'totalSantri': activeSantri,
       'presentCount': presentCount,
       'attendancePercentage': attendancePercentage,
     };

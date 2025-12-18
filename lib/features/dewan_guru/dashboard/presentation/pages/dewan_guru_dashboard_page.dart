@@ -137,7 +137,7 @@ class DewanGuruDashboardPage extends ConsumerWidget {
           child: _buildStatCard(
             title: 'Total Santri',
             value: totalSantri.toString(),
-            subtitle: '$activeSantri Santri Aktif',
+            subtitle: 'Santri Aktif',
             icon: Icons.people,
             color: Colors.blue,
           ),
