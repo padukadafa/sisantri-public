@@ -1,0 +1,9 @@
+{
+  "version": "1",
+  "name": "iot-si-santri",
+  "type": "collection",
+  "ignore": [
+    "node_modules",
+    ".git"
+  ]
+}

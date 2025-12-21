@@ -1,0 +1,32 @@
+meta {
+  name: presensi
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{baseUrl}}/api/attendance/scan
+  body: json
+  auth: inherit
+}
+
+headers {
+  x-api-key: secret-api-key-here-f
+  x-device-id: rfid-reader-001
+  x-device-secret: rfabid-012312345-secret
+}
+
+body:json {
+  {
+    "rfidUid" : "asdasdasd"
+  }
+}
+
+vars:pre-request {
+  baseUrl: http://localhost:3000
+}
+
+settings {
+  encodeUrl: true
+  timeout: 0
+}

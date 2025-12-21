@@ -8,7 +8,7 @@ const {
   getAttendanceStats,
   createLogActivity,
 } = require("../services/attendanceService");
-const { checkRegisterStatus,updateRFID } = require("../services/rfid");
+const { checkRegisterStatus, updateRFID } = require("../services/rfid");
 const { verifyDevice } = require("../middleware/auth");
 const { findUserByRFID } = require("../services/userService");
 const { addUserPoint } = require("../services/gamifikasiService");
@@ -26,7 +26,6 @@ router.post(
     body("rfidUid").isString().withMessage("RFID UID must be a string"),
   ],
   async (req, res, next) => {
-
     try {
       const errors = validationResult(req);
       if (!errors.isEmpty()) {
@@ -43,7 +42,7 @@ router.post(
       console.log(`RFID scan received: ${rfidUid} from device: ${deviceId}`);
       const result = await checkRegisterStatus();
       if (result && result.isActive) {
-        const response = await updateRFID(result.id,rfidUid,result.userId);
+        const response = await updateRFID(result.id, rfidUid, result.userId);
         res.status(200).json({
           success: true,
           message: response ?? "RFID berhasil didaftarkan",
@@ -51,7 +50,7 @@ router.post(
         return;
       }
       const schedule = await getTodaySchedule();
-      
+
       if (!schedule) {
         return res.status(403).json({
           success: false,
@@ -106,18 +105,18 @@ router.post(
           message: "Presensi sudah dicatat",
         });
       }
-      
+
       // Get poin from schedule, default to 1 if not set
       const poin = schedule.poin || 1;
-      
+
       // Add tanggal to attendance data
       const attendanceData = {
         ...todayAttendance,
         tanggal: schedule.tanggal.toDate(),
       };
-      
-      await createAttendance(attendanceData, poin);
-      
+
+      await createAttendance(attendanceData, poin, deviceId);
+
       const attendancePoin = poin;
       // await addUserPoint(user, attendancePoin);
       await createLogActivity({

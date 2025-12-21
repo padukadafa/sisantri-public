@@ -25,9 +25,28 @@ final attendanceStatusProvider =
             .get();
 
         final statusMap = <String, String>{};
+        final statusTimestampMap = <String, DateTime>{};
+
         for (final doc in snapshot.docs) {
           final data = doc.data();
-          statusMap[data['userId']] = data['status'];
+          final userId = data['userId'] as String?;
+          final status = data['status'] as String?;
+          if (userId == null || status == null) continue;
+
+          // Ambil status terbaru per user berdasarkan timestamp/createdAt
+          final ts =
+              (data['timestamp'] as Timestamp?) ??
+              (data['createdAt'] as Timestamp?);
+          final tsDate = ts?.toDate();
+
+          final existingTs = statusTimestampMap[userId];
+          if (existingTs == null ||
+              (tsDate != null && tsDate.isAfter(existingTs))) {
+            statusMap[userId] = status;
+            if (tsDate != null) {
+              statusTimestampMap[userId] = tsDate;
+            }
+          }
         }
 
         return statusMap;

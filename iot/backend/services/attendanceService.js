@@ -19,17 +19,24 @@ async function getTodaySchedule() {
       .where("isAktif", "==", true)
       .where("tanggal", ">=", Timestamp.fromDate(today))
       .where("tanggal", "<", Timestamp.fromDate(tomorrow))
-      .limit(1)
       .get();
 
     if (snapshot.empty) {
       return null;
     }
-    const doc = snapshot.docs.find(
-      (data) =>
-        checkScheduleTime(data.data().waktuMulai, data.data().waktuSelesai)
-          .isWithinSchedule
-    );
+    const doc = snapshot.docs.find((d) => {
+      const data = d.data();
+      const isScheduled = checkScheduleTime(
+        data.waktuMulai,
+        data.waktuSelesai
+      ).isWithinSchedule;
+      if (isScheduled) {
+        return true;
+      }
+    });
+    if (!doc) {
+      return null;
+    }
     const data = doc.data();
     const scheduleTime = checkScheduleTime(data.waktuMulai, data.waktuSelesai);
     return {
@@ -85,6 +92,7 @@ async function getTodayAttendance(jadwalId, userId) {
 function checkScheduleTime(waktuMulai, waktuSelesai) {
   try {
     const now = getWIBDate();
+    console.log("Current WIB time:", now);
     const currentHour = now.getHours();
     const currentMinute = now.getMinutes();
     const currentTime = currentHour * 60 + currentMinute;
@@ -94,7 +102,9 @@ function checkScheduleTime(waktuMulai, waktuSelesai) {
 
     const [endHour, endMinute] = waktuSelesai.split(":").map(Number);
     const endTime = endHour * 60 + endMinute;
-
+    console.log(
+      `Current time: ${currentHour}:${currentMinute}, Start time: ${waktuMulai}, End time: ${waktuSelesai}`
+    );
     if (currentTime < startTime) {
       return {
         isWithinSchedule: false,
@@ -230,18 +240,21 @@ async function updateAggregates(
  * @param {number} poin - Points for this attendance
  * @returns {Promise<Object>} Created attendance record
  */
-async function createAttendance(attendanceData, poin = 1) {
+async function createAttendance(attendanceData, poin = 1, deviceName) {
   try {
     const presensiRef = db.collection("presensi");
     const now = Timestamp.now();
-    const docRef = await presensiRef.add({
-      ...attendanceData,
-      timestamp: now,
-      status: "hadir",
-      poinDiperoleh: poin,
-    });
-
-    const doc = await docRef.get();
+    const doc = await presensiRef.doc(attendanceData.id).set(
+      {
+        timestamp: now,
+        status: "hadir",
+        recordedBy: "rfid_system",
+        recordedByName: deviceName,
+      },
+      {
+        merge: true,
+      }
+    );
 
     // Update aggregates
     const tanggal = attendanceData.tanggal || now.toDate();
@@ -255,7 +268,7 @@ async function createAttendance(attendanceData, poin = 1) {
 
     return {
       id: doc.id,
-      ...doc.data(),
+      ...doc,
     };
   } catch (error) {
     throw new Error(`Error creating attendance: ${error.message}`);

@@ -1,10 +1,10 @@
 function getWIBDate(date = new Date()) {
-  if (process.env.PRODUCTION === 'false') {
+  if (!process.env.PRODUCTION) {
     return date;
   }
   const utc = date.getTime() + date.getTimezoneOffset() * 60000;
   const wib = new Date(utc + 7 * 3600000);
-  wib.setDate(wib.getDate()-1);
+  wib.setDate(wib.getDate() - 1);
   return wib;
 }
 
@@ -20,27 +20,30 @@ function getPeriodeKey(periode, date) {
   const day = date.getDate();
 
   switch (periode) {
-    case 'daily':
-      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    
-    case 'weekly':
+    case "daily":
+      return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(
+        2,
+        "0"
+      )}`;
+
+    case "weekly":
       // Get week number
       const startOfYear = new Date(year, 0, 1);
       const days = Math.floor((date - startOfYear) / (24 * 60 * 60 * 1000));
       const weekNumber = Math.ceil((days + startOfYear.getDay() + 1) / 7);
-      return `${year}-W${String(weekNumber).padStart(2, '0')}`;
-    
-    case 'monthly':
-      return `${year}-${String(month).padStart(2, '0')}`;
-    
-    case 'semester':
+      return `${year}-W${String(weekNumber).padStart(2, "0")}`;
+
+    case "monthly":
+      return `${year}-${String(month).padStart(2, "0")}`;
+
+    case "semester":
       // Semester 1: Jan-Jun, Semester 2: Jul-Dec
       const semester = month <= 6 ? 1 : 2;
       return `${year}-S${semester}`;
-    
-    case 'yearly':
+
+    case "yearly":
       return `${year}`;
-    
+
     default:
       throw new Error(`Invalid periode type: ${periode}`);
   }
@@ -53,16 +56,16 @@ function getPeriodeKey(periode, date) {
  */
 function getAllPeriodeKeys(date) {
   return {
-    daily: getPeriodeKey('daily', date),
-    weekly: getPeriodeKey('weekly', date),
-    monthly: getPeriodeKey('monthly', date),
-    semester: getPeriodeKey('semester', date),
-    yearly: getPeriodeKey('yearly', date)
+    daily: getPeriodeKey("daily", date),
+    weekly: getPeriodeKey("weekly", date),
+    monthly: getPeriodeKey("monthly", date),
+    semester: getPeriodeKey("semester", date),
+    yearly: getPeriodeKey("yearly", date),
   };
 }
 
 module.exports = {
   getWIBDate,
   getPeriodeKey,
-  getAllPeriodeKeys
+  getAllPeriodeKeys,
 };
