@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:sisantri/shared/models/presensi_aggregate_model.dart';
 import 'package:sisantri/features/santri/presensi/data/models/presensi_model.dart';
 
@@ -299,6 +300,56 @@ class PresensiAggregateService {
       }).toList();
     } catch (e) {
       // Return empty list instead of throwing
+      return [];
+    }
+  }
+
+  /// Get leaderboard untuk rentang tanggal khusus (tanpa perlu aggregates periodik)
+  static Future<List<Map<String, dynamic>>> getLeaderboardByDateRange({
+    required DateTime startDate,
+    required DateTime endDate,
+    int limit = 100,
+  }) async {
+    try {
+      final snapshot = await _firestore
+          .collection(_aggregateCollection)
+          .where('periode', isEqualTo: "daily")
+          .where(
+            'startDate',
+            isGreaterThanOrEqualTo: Timestamp.fromDate(startDate),
+          )
+          .where('startDate', isLessThanOrEqualTo: Timestamp.fromDate(endDate))
+          .orderBy('totalPoin', descending: true)
+          .get()
+          .timeout(const Duration(seconds: 10));
+      debugPrint("Snapshots: ${snapshot.docs.length}");
+
+      // Convert to list and sort by total poin desc
+      final result = snapshot.docs.map((entry) {
+        final data = entry.data();
+        return {
+          'userId': data['userId'] ?? '',
+          'totalPoin': data['totalPoin'] ?? 0,
+          'totalHadir': data['totalHadir'] ?? 0,
+          'totalIzin': data['totalIzin'] ?? 0,
+          'totalSakit': data['totalSakit'] ?? 0,
+          'totalAlpha': data['totalAlpha'] ?? 0,
+          'totalTerlambat': data['totalTerlambat'] ?? 0,
+        };
+      }).toList();
+
+      result.sort((a, b) {
+        final poinB = b['totalPoin'] as int? ?? 0;
+        final poinA = a['totalPoin'] as int? ?? 0;
+        return poinB.compareTo(poinA);
+      });
+
+      if (result.length > limit) {
+        return result.sublist(0, limit);
+      }
+
+      return result;
+    } catch (e) {
       return [];
     }
   }

@@ -16,6 +16,17 @@ final leaderboardParamsProvider = Provider<Map<String, String>>((ref) {
   final periode = ref.watch(leaderboardPeriodeProvider);
   final now = DateTime.now();
 
+  if (periode == 'asrama') {
+    final start = DateTime(2025, 12, 24);
+    final end = DateTime(2025, 12, 31);
+    return {
+      'periode': periode,
+      'periodeKey': 'asrama-2025-12-24_2025-12-31',
+      'start': start.toIso8601String(),
+      'end': end.toIso8601String(),
+    };
+  }
+
   final periodeKey = switch (periode) {
     'monthly' => PeriodeKeyHelper.monthly(now),
     'semester' => PeriodeKeyHelper.semester(now),
@@ -37,6 +48,76 @@ final aggregateLeaderboardProvider =
         final periode = params['periode'] ?? 'monthly';
         final periodeKey =
             params['periodeKey'] ?? PeriodeKeyHelper.monthly(DateTime.now());
+
+        if (periode == 'asrama') {
+          final startIso = params['start'];
+          final endIso = params['end'];
+
+          final startDate = startIso != null
+              ? DateTime.parse(startIso)
+              : DateTime(2025, 12, 24);
+          final endDate = endIso != null
+              ? DateTime.parse(endIso)
+              : DateTime(2025, 12, 30, 23, 59, 59);
+
+          debugPrint(
+            '🔍 Loading leaderboard: periode=$periode, range=$startDate - $endDate',
+          );
+
+          final leaderboard =
+              await PresensiAggregateService.getLeaderboardByDateRange(
+                startDate: startDate,
+                endDate: endDate,
+                limit: 10,
+              ).timeout(
+                const Duration(seconds: 15),
+                onTimeout: () {
+                  debugPrint('⏱️ Leaderboard (range) query timeout!');
+                  return [];
+                },
+              );
+
+          if (leaderboard.isEmpty) {
+            debugPrint('⚠️ No aggregate data found (range)');
+            return [];
+          }
+
+          // Join dengan user data
+          final userFutures = leaderboard.map((entry) async {
+            final userId = entry['userId'] as String;
+            final userData = await AuthService.getUserData(userId);
+            return {'userData': userData, 'entry': entry};
+          }).toList();
+
+          final userResults = await Future.wait(userFutures).timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              debugPrint('⏱️ User data fetch timeout (range)!');
+              return [];
+            },
+          );
+
+          final result = <Map<String, dynamic>>[];
+
+          for (final item in userResults) {
+            final userData = item['userData'] as UserModel?;
+            final entry = item['entry'] as Map<String, dynamic>;
+
+            if (userData != null) {
+              result.add({
+                'user': userData,
+                'totalPoin': entry['totalPoin'],
+                'totalHadir': entry['totalHadir'],
+                'totalIzin': entry['totalIzin'],
+                'totalSakit': entry['totalSakit'],
+                'totalAlpha': entry['totalAlpha'],
+              });
+            }
+          }
+
+          debugPrint('✅ Leaderboard (range) loaded: ${result.length} entries');
+          return result;
+        }
 
         debugPrint('🔍 Loading leaderboard: periode=$periode, key=$periodeKey');
 
@@ -140,6 +221,10 @@ class AggregateLeaderboardPage extends ConsumerWidget {
                 child: Text('Semester Ini'),
               ),
               const PopupMenuItem(value: 'yearly', child: Text('Tahun Ini')),
+              const PopupMenuItem(
+                value: 'asrama',
+                child: Text('Asrama Akhir Tahun 2025'),
+              ),
             ],
           ),
           IconButton(
